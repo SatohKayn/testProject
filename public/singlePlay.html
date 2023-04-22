@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="utf-8">
+    <title>Battleship</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>let pageIndex = 1</script>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div id="gameContainer">
+        </div>
+        <div class="game-info" style="color: red;">
+            <p>Turn: <span id="turn-display"></span></p>
+            <p>Info: <span id="info"></span></p>
+        </div>
+        <div class="ship-display">
+            <div class="ship destroyer-ship destroyer" draggable="true"></div>
+            <div class="ship submarine-ship submarine" draggable="true"></div>
+            <div class="ship cruiser-ship cruiser" draggable="true"></div>
+            <div class="ship battleship-ship battleship" draggable="true"></div>
+            <div class="ship carrier-ship carrier" draggable="true"></div>
+        </div>
+
+        <div class="setup-buttons">
+            <button id="rotate-button" class="btngame">ROTATE</button>
+            <button id="start-button" class="btngame">START GAME</button>
+        </div>
+    </div>
+
+    <script src="/game.js"></script>
+</body>
+
+</html>
