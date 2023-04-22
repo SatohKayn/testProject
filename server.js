@@ -8,15 +8,15 @@ const server = http.createServer(app)
 const io = socketio(server)
 const { makeid } = require('./utils.js')
 // Set static folder
-<<<<<<< HEAD
+
 let roomList = io.sockets.adapter.rooms
 let rooms = []
 let roomId = null
 
 app.use(express.static(path.join(__dirname, "public")))
-=======
+
 app.use(express.static(__dirname))
->>>>>>> e76616bd3182667bc94f0400bdd78cab16fadd93
+
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
