@@ -39,7 +39,7 @@ if (pageIndex == 0) {
     const createRoomButton = document.querySelector('#createGameButton')
     const joinGameButton = document.querySelector('#joinGameButton')
     singlePlayButton.addEventListener('click', () => {
-        window.location.href = "http://localhost:3000/single"
+        window.location.href = "https://battleship-ywx1.onrender.com/single"
     })
     createRoomButton.addEventListener('click', () => {
         const socket = io();
@@ -48,13 +48,13 @@ if (pageIndex == 0) {
 
         socket.on('getRoomId', (getRoomId) => {
             roomId = getRoomId
-            window.location.href = `http://localhost:3000/multi/rooms/${roomId}`
+            window.location.href = `https://battleship-ywx1.onrender.com/multi/rooms/${roomId}`
         })
     })
 
     joinGameButton.addEventListener('click', () => {
         roomId = document.getElementById('gameCodeInput').value
-        window.location.href = `http://localhost:3000/multi/rooms/${roomId}`
+        window.location.href = `https://battleship-ywx1.onrender.com/multi/rooms/${roomId}`
     })
 }
 
