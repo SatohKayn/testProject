@@ -39,7 +39,7 @@ if (pageIndex == 0) {
     const createRoomButton = document.querySelector('#createGameButton')
     const joinGameButton = document.querySelector('#joinGameButton')
     singlePlayButton.addEventListener('click', () => {
-        window.location.href = "https://battleship-ywx1.onrender.com/single"
+        window.location.href = window.location.protocol + "single"
     })
     createRoomButton.addEventListener('click', () => {
         const socket = io();
@@ -48,23 +48,23 @@ if (pageIndex == 0) {
 
         socket.on('getRoomId', (getRoomId) => {
             roomId = getRoomId
-            window.location.href = `https://battleship-ywx1.onrender.com/multi/rooms/${roomId}`
+            window.location.href = window.location.protocol + `multi/rooms/${roomId}`
         })
     })
 
     joinGameButton.addEventListener('click', () => {
         roomId = document.getElementById('gameCodeInput').value
-        window.location.href = `https://battleship-ywx1.onrender.com/multi/rooms/${roomId}`
+        window.location.href = window.location.protocol + `multi/rooms/${roomId}`
     })
 }
 
 if (pageIndex == 1)
     startButton.addEventListener('click', startGameSingle);
 
-if (pageIndex == 2){
+if (pageIndex == 2) {
     gameCode = window.location.pathname.split('/').pop();
     joinGame(gameCode)
-} 
+}
 
 function joinGame(gameCode) {
     const socket = io();
@@ -89,7 +89,7 @@ function joinGame(gameCode) {
 
     socket.on('player-number', (num) => {
         playerNum = parseInt(num)
-        if(playerNum == 1)
+        if (playerNum == 1)
             currentPlayer = 'user'
         else
             currentPlayer = 'enemy'
@@ -101,10 +101,11 @@ function joinGame(gameCode) {
             document.getElementById('code-display').style.display = "none";
             // document.querySelector('.setup-buttons').style.display = "none";
             handlePlayGameMulti()
-            
+
         }
     })
     createBoard('user')
+    // createQRCode(window.location.href)
     createBoard('enemy')
     listShip.forEach(ship => randomShip(ship, 'user'))
     const userBlocks = document.querySelectorAll('#user div')
@@ -217,6 +218,21 @@ function createBoard(user) {
         block.id = i
         board.append(block)
     }
+    gameboard.append(board)
+}
+
+function createQRCode(url){
+    const board = document.createElement('div')
+    // Generate the QR code using the Google Charts API
+    const chartUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${url}&chs=256x256&choe=UTF-8&chld=L|0`;
+
+    // Create an image element and set its source to the chart URL
+    const img = document.createElement("img");
+    img.src = chartUrl;
+
+    // Append the image element to the page
+    board.appendChild(img);
+
     gameboard.append(board)
 }
 
@@ -435,6 +451,6 @@ function checkScore(user, userHit, userSunkShip) {
 function handleJoinRoom(status) {
     if (!status) {
         alert('join room failed')
-        window.location.href = "http://localhost:3000"
+        window.location.href =`http://` + window.location.host
     }
 }
