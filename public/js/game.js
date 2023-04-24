@@ -85,6 +85,11 @@ function joinGame(gameCode) {
         alert('URL copied to clipboard');
     });
 
+    const popupButton = document.getElementById('popup-button');
+    popupButton.addEventListener('click', () => {
+        var popup = window.open("", "QRCODE", "width= 300, height=300")
+        popup.document.write(`<img src=https://chart.googleapis.com/chart?cht=qr&chl=${window.location.href}&chs=256x256&choe=UTF-8&chld=L|0>`)
+    })
     socket.on('enemy-ready', (enemystatus, msg) => { handleEnemyReady(enemystatus, msg) })
 
     socket.on('player-number', (num) => {
@@ -96,9 +101,8 @@ function joinGame(gameCode) {
     })
 
     socket.on('check-player', (roomStatus) => {
-        console.log(roomStatus)
         if (roomStatus) {
-            document.getElementById('code-display').style.display = "none";
+            // document.getElementById('code-display').style.display = "none";
             // document.querySelector('.setup-buttons').style.display = "none";
             handlePlayGameMulti()
 
@@ -109,8 +113,13 @@ function joinGame(gameCode) {
         console.log(number)
         document.querySelector(`.p${number} .ready`).classList.toggle('active')
     })
+
+    socket.on('game-winner', (number) => {
+        gameOver = true
+        alert(`player ${number} win`)
+    })
+
     createBoard('user')
-    // createQRCode(window.location.href)
     createBoard('enemy')
     listShip.forEach(ship => randomShip(ship, 'user'))
     const userBlocks = document.querySelectorAll('#user div')
@@ -140,6 +149,7 @@ function joinGame(gameCode) {
         // })
         enemyBlocks.forEach(block => block.addEventListener('click', () => {
             if (currentPlayer == 'user' && !gameOver) {
+                turnDisplay.innerHTML = currentPlayer
                 if (!block.classList.contains('boom') && !block.classList.contains('miss')) {
                     shot = block.getAttribute('id')
                     socket.emit('fire', shot)
@@ -150,18 +160,21 @@ function joinGame(gameCode) {
         socket.on('fire', (id) => {
             if (userBlocks[id].classList.contains('taken')) {
                 userBlocks[id].classList.add('boom')
+                infoDisplay.innerHTML = currentPlayer + ' hit'
                 let classes = Array.from(userBlocks[id].classList)
                 classes = classes.filter(classname => classname != 'block')
                 classes = classes.filter(classname => classname != 'boom')
                 classes = classes.filter(classname => classname != 'taken')
                 enemyHits.push(...classes)
-                checkScore('enemy', enemyHits, enemySunkShips)
+                
                 currentPlayer = 'enemy'
             } else {
+                infoDisplay.innerHTML = currentPlayer + ' miss'
                 userBlocks[id].classList.add('miss')
                 currentPlayer = 'user'
             }
-
+            checkScore('enemy', enemyHits, enemySunkShips)
+            turnDisplay.innerHTML = currentPlayer
             const block = userBlocks[id]
             socket.emit('fire-reply', block.classList)
         })
@@ -173,18 +186,32 @@ function joinGame(gameCode) {
             if (currentPlayer === 'user' && !gameOver) {
                 if (obj.includes('taken')) {
                     enemySquare.classList.add('boom')
+                    infoDisplay.innerHTML = currentPlayer + ' hit'
                     let classes = Array.from(enemySquare.classList)
                     classes = classes.filter(classname => classname != 'block')
                     classes = classes.filter(classname => classname != 'boom')
                     classes = classes.filter(classname => classname != 'taken')
                     userHits.push(...classes)
-                    checkScore('user', userHits, userSunkShips)
+                    
                     currentPlayer = 'user'
                 } else {
+                    infoDisplay.innerHTML = currentPlayer + ' miss'
                     enemySquare.classList.add('miss')
                     currentPlayer = 'enemy'
                 }
-
+                checkScore('user', userHits, userSunkShips)
+                // if(gameOver){
+                //     let winner 
+                //     if (userSunkShips.length == 5) {
+                //         winner = 1
+                //     }
+                //     if (enemySunkShips.length == 5) {
+                //         winner = 2
+                        
+                //     }
+                //     socket.emit('game-winner', winner)
+                // }
+                turnDisplay.innerHTML = currentPlayer
             }
         })
     }

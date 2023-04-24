@@ -69,8 +69,6 @@ io.on("connection", socket => {
                 room.readys[socket.number - 1] = true 
         })
         let enemyReady = true
-        let msg = 'player ' + socket.number + ' ready'
-        
         socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
     })
 
@@ -104,16 +102,16 @@ io.on("connection", socket => {
 
     socket.on('fire', (shot) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        console.log(shot + ' from ' + socket.number)
         socket.to(roomId).emit('fire', shot)
     })
 
     socket.on('fire-reply', classList => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        const values = Object.values(classList)
-        console.log(values)
         socket.to(roomId).emit('fire-reply', classList)
     })
 
-    
+    socket.on('game-winner', (winner) => {
+        let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+        io.to(roomId).emit('game-winner', winner)
+    })
 })
