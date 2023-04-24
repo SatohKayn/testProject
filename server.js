@@ -71,13 +71,17 @@ io.on("connection", socket => {
         let enemyReady = true
         let msg = 'player ' + socket.number + ' ready'
         
-        socket.to(roomId).emit('enemy-ready', enemyReady, msg)
+        socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
     })
 
-    socket.on('disconnect', () => {
-        let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        socket.to(roomId).emit('player-connection', socket.number)
-      })
+    // socket.on('disconnect', () => {
+    //     let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+    //     io.to(roomId).emit('player-connection', socket.number)
+    //   })
+    // socket.on('connect', () => {
+    //     let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+    //     io.to(roomId).emit('player-connection', socket.number)
+    //   })
 
     socket.on('check-player', () => {
         let roomStatus = false

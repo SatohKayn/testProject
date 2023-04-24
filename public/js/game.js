@@ -104,6 +104,11 @@ function joinGame(gameCode) {
 
         }
     })
+
+    socket.on('player-connection', (number) => {
+        console.log(number)
+        document.querySelector(`.p${number} .ready`).classList.toggle('active')
+    })
     createBoard('user')
     // createQRCode(window.location.href)
     createBoard('enemy')
@@ -114,14 +119,15 @@ function joinGame(gameCode) {
         if (gameOver) return
         socket.emit('player-ready')
         playerReady = true
-        document.querySelector(`.player p${playerNum} .connected`).classList.toggle('active')
+        document.querySelector(`.p${playerNum} .ready`).classList.toggle('active')
     }
 
-    function handleEnemyReady(enemystatus, msg) {
+    function handleEnemyReady(enemystatus, number) {
         enemyReady = enemystatus
+        document.querySelector(`.p${number} .ready`).classList.toggle('active')
         socket.emit('check-player')
     }
-
+    
     function handlePlayGameMulti() {
         // socket.on('player-turn', (playerTurn) => {
         //     if(playerTurn == playerNum){
