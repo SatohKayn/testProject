@@ -13,13 +13,19 @@
 
 <body>
     <div class="container">
+        <div class="popup" style="display: none;">
+            <div class="popup-content">
+                <img src="/public/images/giphy.gif" alt="Animated GIF" width="100%">
+                <button class="close-popup">X</button>
+            </div>
+        </div>
         <div id="code-display" style="display: grid; place-items: center;">
             <div class="room-code" style="font-size: 2rem; color: red;">Room Code: <span id="room-code"></span></div>
             <div class="btn-set" style="display: flex; justify-content: space-between;">
                 <button id="copy-button" class="btngame">Copy URL</button>
                 <button id="popup-button" class="btngame">QRCODE</button>
-                </div>
-            
+            </div>
+
         </div>
 
         <div class="player-container">
@@ -27,12 +33,14 @@
                 Player 1
                 <div class="connected">Connected</div>
                 <div class="ready">Ready</div>
+                <span class="timer">10:00</span>
             </div>
 
             <div class="p2">
                 Player 2
                 <div class="connected">Connected</div>
                 <div class="ready">Ready</div>
+                <span class="timer">10:00</span>
             </div>
         </div>
         <div id="gameContainer">
@@ -53,6 +61,7 @@
             <button id="rotate-button" class="btngame">ROTATE</button>
             <button id="start-button" class="btngame">START GAME</button>
         </div>
+        
     </div>
 
     <script src="/js/game.js"></script>

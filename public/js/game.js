@@ -4,6 +4,8 @@ const rotateButton = document.querySelector('#rotate-button')
 const startButton = document.querySelector('#start-button')
 const turnDisplay = document.querySelector('#turn-display')
 const infoDisplay = document.querySelector('#info')
+const hitSound = new Audio('/images/BombHit.mp3');
+const missSound = new Audio('/images/BombMiss.mp3');
 let angle = 0
 let currentPlayer = 'user'
 let gameOver = false
@@ -94,29 +96,32 @@ function joinGame(gameCode) {
 
     socket.on('player-number', (num) => {
         playerNum = parseInt(num)
-        if (playerNum == 1)
-            currentPlayer = 'user'
-        else
-            currentPlayer = 'enemy'
     })
 
     socket.on('check-player', (roomStatus) => {
         if (roomStatus) {
-            // document.getElementById('code-display').style.display = "none";
-            // document.querySelector('.setup-buttons').style.display = "none";
+            if (playerNum == 1)
+                socket.emit('turn-start', playerNum)
+            document.getElementById('code-display').style.display = "none";
+            document.querySelector('.setup-buttons').style.display = "none";
             handlePlayGameMulti()
-
         }
     })
 
-    socket.on('player-connection', (number) => {
-        console.log(number)
-        document.querySelector(`.p${number} .ready`).classList.toggle('active')
+    socket.on('timerTick', (playerNum, time) => {
+        document.querySelector(`.p${playerNum} .timer`).innerHTML = formatDuration(time)
+    })
+
+    socket.on('player-connection', (connections) => {
+        // connections.forEach(connection => {
+        //     if()
+        // })
+        // document.querySelector(`.p${number} .connected`).classList.toggle('active')
     })
 
     socket.on('game-winner', (number) => {
         gameOver = true
-        alert(`player ${number} win`)
+        alert(`player ${number + 1} win due to timeout`)
     })
 
     createBoard('user')
@@ -136,17 +141,18 @@ function joinGame(gameCode) {
         document.querySelector(`.p${number} .ready`).classList.toggle('active')
         socket.emit('check-player')
     }
-    
+
     function handlePlayGameMulti() {
-        // socket.on('player-turn', (playerTurn) => {
-        //     if(playerTurn == playerNum){
-        //         currentPlayer = 'user'
-        //         turnDisplay = 'Your Turn'
-        //     } else {
-        //         currentPlayer = 'enemy'
-        //         turnDisplay = 'Enemy Turn'
-        //     }
-        // })
+        socket.on('player-turn', (playerTurn) => {
+            if (playerTurn == playerNum) {
+                currentPlayer = 'user'
+                turnDisplay.innerHTML = 'Your Turn'
+            } else {
+                currentPlayer = 'enemy'
+                turnDisplay.innerHTML = 'Enemy Turn'
+            }
+        })
+
         enemyBlocks.forEach(block => block.addEventListener('click', () => {
             if (currentPlayer == 'user' && !gameOver) {
                 turnDisplay.innerHTML = currentPlayer
@@ -159,6 +165,7 @@ function joinGame(gameCode) {
 
         socket.on('fire', (id) => {
             if (userBlocks[id].classList.contains('taken')) {
+                hitSound.play();
                 userBlocks[id].classList.add('boom')
                 infoDisplay.innerHTML = currentPlayer + ' hit'
                 let classes = Array.from(userBlocks[id].classList)
@@ -166,15 +173,12 @@ function joinGame(gameCode) {
                 classes = classes.filter(classname => classname != 'boom')
                 classes = classes.filter(classname => classname != 'taken')
                 enemyHits.push(...classes)
-                
-                currentPlayer = 'enemy'
             } else {
+                missSound.play();
                 infoDisplay.innerHTML = currentPlayer + ' miss'
                 userBlocks[id].classList.add('miss')
-                currentPlayer = 'user'
             }
             checkScore('enemy', enemyHits, enemySunkShips)
-            turnDisplay.innerHTML = currentPlayer
             const block = userBlocks[id]
             socket.emit('fire-reply', block.classList)
         })
@@ -185,33 +189,22 @@ function joinGame(gameCode) {
             const obj = Object.values(classList)
             if (currentPlayer === 'user' && !gameOver) {
                 if (obj.includes('taken')) {
+                    hitSound.play();
                     enemySquare.classList.add('boom')
                     infoDisplay.innerHTML = currentPlayer + ' hit'
-                    let classes = Array.from(enemySquare.classList)
+                    let classes = Array.from(obj)
                     classes = classes.filter(classname => classname != 'block')
                     classes = classes.filter(classname => classname != 'boom')
                     classes = classes.filter(classname => classname != 'taken')
                     userHits.push(...classes)
-                    
-                    currentPlayer = 'user'
                 } else {
+                    console.log('hello')
+                    missSound.play();
                     infoDisplay.innerHTML = currentPlayer + ' miss'
                     enemySquare.classList.add('miss')
-                    currentPlayer = 'enemy'
+                    socket.emit('turn-start', (playerNum % 2 + 1))
                 }
                 checkScore('user', userHits, userSunkShips)
-                // if(gameOver){
-                //     let winner 
-                //     if (userSunkShips.length == 5) {
-                //         winner = 1
-                //     }
-                //     if (enemySunkShips.length == 5) {
-                //         winner = 2
-                        
-                //     }
-                //     socket.emit('game-winner', winner)
-                // }
-                turnDisplay.innerHTML = currentPlayer
             }
         })
     }
@@ -251,21 +244,6 @@ function createBoard(user) {
         block.id = i
         board.append(block)
     }
-    gameboard.append(board)
-}
-
-function createQRCode(url){
-    const board = document.createElement('div')
-    // Generate the QR code using the Google Charts API
-    const chartUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${url}&chs=256x256&choe=UTF-8&chld=L|0`;
-
-    // Create an image element and set its source to the chart URL
-    const img = document.createElement("img");
-    img.src = chartUrl;
-
-    // Append the image element to the page
-    board.appendChild(img);
-
     gameboard.append(board)
 }
 
@@ -319,13 +297,11 @@ function randomShip(ship, user) {
     }
 }
 
-
-
 function handleClick(e) {
     if (!gameOver && currentPlayer == 'user') {
         if (!e.target.classList.contains('miss') && !e.target.classList.contains('boom')) {
             if (e.target.classList.contains('taken')) {
-                const hitSound = new Audio('./images/BombHit.mp3');
+
                 hitSound.play();
                 e.target.classList.add('boom')
                 infoDisplay.textContent = 'You hit something'
@@ -337,7 +313,7 @@ function handleClick(e) {
                 checkScore('user', userHits, userSunkShips)
                 currentPlayer = 'user'
             } else {
-                const missSound = new Audio('./images/BombMiss.mp3');
+
                 missSound.play();
                 e.target.classList.add('miss')
                 infoDisplay.textContent = 'Miss'
@@ -415,9 +391,7 @@ function computerMaveMove() {
             }
         }
         if (userBlock[randomGo].classList.contains('taken')) {
-            const hitSound = new Audio('./images/BombHit.mp3');
             hitSound.play();
-
             userBlock[randomGo].classList.add('boom')
             infoDisplay.textContent = 'Computer hit your ship'
             let classes = Array.from(userBlock[randomGo].classList)
@@ -429,13 +403,19 @@ function computerMaveMove() {
             lastHit.push(randomGo)
             setTimeout(computerMaveMove, 1000)
         } else {
-            const missSound = new Audio('./images/BombMiss.mp3');
             missSound.play();
             infoDisplay.textContent = 'Computer miss'
             userBlock[randomGo].classList.add('miss')
         }
     }
 
+}
+
+function formatDuration(duration) {
+    let seconds = Math.floor(duration / 1000);
+    let minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
 function isValidGuess(index) {
@@ -449,7 +429,9 @@ function isValidGuess(index) {
     }
     return true
 }
-
+// Get the popup element
+const popup = document.querySelector('.popup')
+const closePopup = document.querySelector('.close-popup');
 function checkScore(user, userHit, userSunkShip) {
     function checkShip(shipName, shipLength) {
         if (userHit.filter(storedShipName => storedShipName == shipName).length == shipLength) {
@@ -464,6 +446,10 @@ function checkScore(user, userHit, userSunkShip) {
                 infoDisplay.textContent = user + ' sunk your ' + shipName
             }
             userSunkShip.push(shipName)
+            popup.style.display = "block"
+            closePopup.onclick = function () {
+                    popup.style.display = "none"
+            }
         }
     }
     checkShip(listShip[0].name, listShip[0].length)
@@ -484,6 +470,6 @@ function checkScore(user, userHit, userSunkShip) {
 function handleJoinRoom(status) {
     if (!status) {
         alert('join room failed')
-        window.location.href =`http://` + window.location.host
+        window.location.href = `http://` + window.location.host
     }
 }
