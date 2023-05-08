@@ -6,7 +6,6 @@
     <meta charset="utf-8">
     <title>Battleship</title>
     <script src="/socket.io/socket.io.js"></script>
-    <script>let pageIndex = 2</script>
     <link rel="stylesheet" href="/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap" rel="stylesheet">
 </head>
@@ -28,16 +27,16 @@
 
         </div>
 
-        <div class="player-container">
+        <div class="player-container" style="text-align: -webkit-center;">
             <div class="p1">
-                Player 1
+                <div>Player 1<img class="img" src="/images/loading-gif.gif" style="width: 32px; height: 32px;"></div>
                 <div class="connected">Connected</div>
                 <div class="ready">Ready</div>
                 <span class="timer">10:00</span>
             </div>
 
             <div class="p2">
-                Player 2
+                <div>Player 2<img class="img"  src="/images/loading-gif.gif" style="width: 32px; height: 32px;"></div>
                 <div class="connected">Connected</div>
                 <div class="ready">Ready</div>
                 <span class="timer">10:00</span>
@@ -64,7 +63,7 @@
         
     </div>
 
-    <script src="/js/game.js"></script>
+    <script src="/js/multi.js" type="module"></script>
 </body>
 
 </html>

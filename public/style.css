@@ -32,7 +32,7 @@ body {
 .btngame {
   font-size: 2rem;
   background-color: hsl(30, 100%, 50%);
-  padding: .5em 1em;
+  padding: .5em .5em;
   outline: none;
   border: none;
   text-decoration: none;
@@ -164,7 +164,7 @@ body {
 .taken.horizontal::before {
   content: '';
   position: absolute;
-  border: .3vmin solid white;
+  border: .3vmin solid black;
   top: -1px;
   bottom: -1px;
   left: -1px;

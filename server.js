@@ -31,99 +31,101 @@ app.get('/single', (req, res) => {
     res.sendFile(__dirname + '/public/singlePlay.html');
 });
 
+app.get('/multi/createroom', (req, res) => {
+    const roomId = createRoom()
+    res.redirect(`/multi/rooms/${roomId}`)
+});
+
 // Start server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
-io.on("connection", socket => {
-    socket.on('create-room', () => {
-        roomId = makeid(9)
-        roomList.set(roomId, new Set())
-        var obj = {
-            "roomid" : roomId,
-            "connections" : [null, null],
-            "readys": [null, null],
-            "timers": [null, null],
-            "playerTimers": [600000, 600000],
-            "currentPlayer": null,
-            "winner": null
+function createRoom() {
+    roomId = makeid(9)
+    roomList.set(roomId, new Set())
+    var obj = {
+        "roomid": roomId,
+        "connections": [false, false],
+        "readys": [null, null],
+        "timers": [null, null],
+        "playerTimers": [600000, 600000],
+        "currentPlayer": null,
+        "winner": null
+    }
+    rooms.push(obj)
+    return roomId
+}
+
+function findRoom(roomId) {
+    for (let i = 0; i < rooms.length; i++) {
+        if (rooms[i].roomid == roomId)
+            return i
+    }
+}
+
+function getPlayerNum(connections){
+    for(let i = 0; i < connections.length; i++){
+        if(!connections[i]){
+            return i + 1
         }
-        rooms.push(obj)
-        socket.emit('getRoomId', roomId)
-    })
-    
+    }
+}
+
+io.on("connection", socket => {
     socket.on('join-room', (room) => {
         let status = true
+        let index = findRoom(room)
         if (!roomList.has(room) || roomList.get(room).size == 2) {
             status = false
             socket.emit('join-room-status', status)
             return
         }
         socket.join(room)
-        if (roomList.get(room).size == 1) {
-            socket.number = 1
-        } else socket.number = 2
+        socket.number = getPlayerNum(rooms[index].connections)
+        rooms[index].connections[socket.number - 1] = true
+        io.to(roomId).emit('player-connection', rooms[index].connections)
         socket.emit('player-number', socket.number)
     })
 
     socket.on('player-ready', () => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        rooms.forEach(room => {
-            if(room.roomid == roomId)
-                room.readys[socket.number - 1] = true 
-        })
+        let index = findRoom(roomId)
+        rooms[index].readys[socket.number - 1] = true
         let enemyReady = true
         socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
     })
 
-    io.on('disconnect', () => {
+    socket.on('disconnecting', () => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        rooms.forEach(room => {
-            if(room.roomid == roomId){
-                room.connections[socket.number - 1] = false
-                io.to(roomId).emit('player-connection', room.connections)
-            }             
-        }) 
-      })
-
-    io.on('connect', () => {
-        let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        rooms.forEach(room => {
-            if(room.roomid == roomId){
-                room.connections[socket.number - 1] = true
-                io.to(roomId).emit('player-connection', room.connections)
-            }             
-        })    
-      })
+        let index = findRoom(roomId)
+        if(rooms[index] != null){
+            rooms[index].connections[socket.number - 1] = false 
+            io.to(roomId).emit('player-connection', rooms[index].connections)
+        }      
+    })
 
     socket.on('check-player', () => {
-        let roomStatus = false
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+        let index = findRoom(roomId)
+        let roomStatus = false
         var a = [true, true]
-        rooms.forEach(room => {
-            if(room.roomid == roomId && JSON.stringify(room.readys) == JSON.stringify(a)){
-                roomStatus = true
-
-                io.to(roomId).emit('check-player', (roomStatus))
-            }     
-        })  
+        if (JSON.stringify(rooms[index].readys) == JSON.stringify(a)) {
+            roomStatus = true
+            io.to(roomId).emit('check-player', (roomStatus))
+        }
     })
-    
+
     socket.on('turn-start', (playerNum) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        rooms.forEach(room => {          
-            if(room.roomid == roomId){
-                room.currentPlayer = playerNum
-                io.to(roomId).emit('player-turn', (room.currentPlayer))
-                clearInterval(room.timers[room.currentPlayer % 2])        
-                room.timers[playerNum - 1] = setInterval(() => {
-                    room.playerTimers[playerNum - 1] -= 1000
-                    io.to(roomId).emit('timerTick', playerNum, room.playerTimers[playerNum - 1]); 
-                    if(room.playerTimers[playerNum - 1] == 0)
-                        io.to(roomId).emit('game-winner', (playerNum % 2))     
-                }, 1000);
-                
-            }     
-        })
+        let index = findRoom(roomId)
+        rooms[index].currentPlayer = playerNum
+        io.to(roomId).emit('player-turn', (rooms[index].currentPlayer))
+        clearInterval(rooms[index].timers[rooms[index].currentPlayer % 2])
+        rooms[index].timers[playerNum - 1] = setInterval(() => {
+            rooms[index].playerTimers[playerNum - 1] -= 1000
+            io.to(roomId).emit('timerTick', playerNum, rooms[index].playerTimers[playerNum - 1]);
+            if (rooms[index].playerTimers[playerNum - 1] == 0)
+                io.to(roomId).emit('game-winner', (playerNum % 2))
+        }, 1000);
     })
 
     socket.on('fire', (shot) => {
