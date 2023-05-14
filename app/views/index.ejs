@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="utf-8">
+    <title>Battleship</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="index-screen">
+        <nav class="navbar">
+            <ul class="nav-list">
+                <li><a href="/">Home</a></li>
+                <li><a href="https://www.hasbro.com/common/instruct/battleship.pdf">Rules</a></li>
+                <li><a href="#">Leaderboard</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <% if (user) { %>
+                    <div class="dropdown" id="user-profile-link">
+                        <img src="<%= user.image %>" alt="Profile Image">
+                        <ul class="dropdown-menu">
+                            <li><a href="/users/<%= user.id %>">My Profile</a></li>
+                            <li><a href="/logout" onclick="performPostRequest()">Log Out</a></li>
+                        </ul>
+                    </div>
+                    <% } else { %>
+                        <div id="authbutton">
+                            <a href="/register" class="register-button">Register</a>
+                            <a href="/login" class="login-button">Login</a>
+                        </div>
+                        <% } %>
+            </div>
+        </nav>
+        <div class="container">
+            <div class="splash-container">
+                <div class="title">
+                    <h1 class="splash-title">Battleship</h1>
+                </div>
+                <div class="button-container" style="display: flex;">
+                    <button type="submit" class="btngame" id="singlePlayButton">
+                        Single Play
+                    </button>
+                    <button type="submit" class="btngame" id="rankGameButton">
+                        Rank Game
+                    </button>                   
+                </div>
+                <button type="submit" class="btngame" id="createGameButton"">
+                    Create Custom Room
+                </button>
+                <div class=" form-group">
+                    <input type="text" placeholder="Enter Game Code" id="gameCodeInput" />
+                </div>
+                <button type="submit" class="btngame" id="joinGameButton">
+                    Join Room
+                </button>
+            </div>
+        </div>
+</div>
+    <script src="/js/index.js"></script>
+    <script>
+        function performPostRequest() {
+            const url = '/logout'; // Replace with the actual URL for your POST request
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => response.json()).then(result => {
+                    if (result.success) {
+                        alert(result.message)
+                        window.location.href = window.location.protocol + "/"
+                    } else {
+                        alert(result.message)
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Register</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/css/style2.css">
+
+</head>
+
+<body>
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-md-7 col-lg-5">
+					<div class="login-wrap p-4 p-md-5">
+		      	<div class="img" style="background-image: url(/images/gamebackground.jpg);"></div>
+		      	<h3 class="text-center mb-4">Create Your Account</h3>
+						<form id="registerForm" class="signup-form">
+		      		<div class="form-group mb-3">
+		      			<label class="label" for="name">Full Name</label>
+		      			<input type="text" class="form-control" name="username" placeholder="Username">
+		      		</div>
+	            <div class="form-group mb-3">
+	            	<label class="label" for="password">Password</label>
+	              <input id="password-field" type="password" class="form-control" name="password" placeholder="Password">
+	            </div>
+	            <div class="form-group">
+	            	<button type="submit" class="form-control btn btn-primary submit px-3">Sign Up</button>
+	            </div>
+	          </form>
+	          <p>I'm already a member! <a data-toggle="tab" href="/login">Sign In</a></p>
+	        </div>
+				</div>
+			</div>
+		</div>
+    <div id="popup" class="popup" >
+      <div class="popup-content">
+        <span class="close" onclick="closePopup()">&times;</span>
+        <p id="popupMessage"></p>
+      </div>
+    </div>
+  <script>
+    const registerForm = document.getElementById('registerForm');
+
+    registerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const username = registerForm.username.value;
+      const password = registerForm.password.value;
+
+      const data = { username, password };
+
+      fetch('/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            window.location.href = window.location.protocol + "/login"
+          } else {
+            showErrorPopup(result.message)
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          // Handle error
+        });
+    });
+    function showErrorPopup(message) {
+      const popup = document.getElementById('popup');
+      const popupMessage = document.getElementById('popupMessage');
+      popupMessage.textContent = message;
+      popup.style.display = 'block';
+    }
+
+    // Function to close the popup
+    function closePopup() {
+      const popup = document.getElementById('popup');
+      popup.style.display = 'none';
+    }
+  </script>
+</body>
+
+</html>

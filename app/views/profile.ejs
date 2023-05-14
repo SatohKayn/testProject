@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>User Profile</title>
+    <style>
+        body {
+            background: linear-gradient(-135deg, #c850c0, #4158d0);
+        }
+
+        .card {
+            width: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            background: #fff;
+        }
+
+        .profile-container {
+            text-align: center;
+        }
+
+        .profile-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .container1 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .rank-container {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .rank-image {
+            width: 200px;
+            height: 200px;
+            margin-left: 10px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .stat {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="profile-container">
+            <h1>Welcome <%= user.username %>
+            </h1>
+            <div class="container1">
+                <img class="profile-image" src="<%= user.image %>" alt="Profile Image">
+                <form action="/profile/update-image" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="profileImage">
+                    <button type="submit">Edit Image</button>
+                </form>
+            </div>
+            <div class="rank-container">
+                <img class="rank-image" src="/images/iron.png" alt="Rank Image">
+                <span class="rank-points">Point: <%= user.point %></span>
+            </div>
+            <div class="stats-container">
+                <div class="stat">
+                    <h3>Wins</h3>
+                    <p>
+                        <%= user.wins %>
+                    </p>
+                </div>
+                <div class="stat">
+                    <h3>Loses</h3>
+                    <p>
+                        <%= user.loses %>
+                    </p>
+                </div>
+            </div>
+            <div id="piechart"></div>
+            <div class="last-match">
+                <h3>Last Match</h3>
+            </div>
+        </div>
+    </div>
+    
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script type="text/javascript">
+        const user = <%- JSON.stringify(user) %>;
+        // Load google charts
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(drawChart);
+
+        // Draw the chart and set the chart values
+        function drawChart() {
+            var data = google.visualization.arrayToDataTable([
+                ['Titles', 'Percentage'],
+                ['Wins', user.wins],
+                ['Loses', user.loses]
+            ]);
+
+            // Optional; add a title and set the width and height of the chart
+            var options = { 'title': 'Win rates', 'width': 400, 'height': 400 };
+
+            // Display the chart inside the <div> element with id="piechart"
+            var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+            chart.draw(data, options);
+        }
+    </script>
+</body>
+
+</html>

@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <title>Battleship</title>
     <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap" rel="stylesheet">
 </head>
 
@@ -14,7 +14,7 @@
     <div class="container">
         <div class="popup" style="display: none;">
             <div class="popup-content">
-                <img src="/public/images/giphy.gif" alt="Animated GIF" width="100%">
+                <img src="/images/giphy.gif" alt="Animated GIF" width="100%">
                 <button class="close-popup">X</button>
             </div>
         </div>
@@ -36,7 +36,7 @@
             </div>
 
             <div class="p2">
-                <div>Player 2<img class="img"  src="/images/loading-gif.gif" style="width: 32px; height: 32px;"></div>
+                <div>Player 2<img class="img" src="/images/loading-gif.gif" style="width: 32px; height: 32px;"></div>
                 <div class="connected">Connected</div>
                 <div class="ready">Ready</div>
                 <span class="timer">10:00</span>
@@ -60,7 +60,7 @@
             <button id="rotate-button" class="btngame">ROTATE</button>
             <button id="start-button" class="btngame">START GAME</button>
         </div>
-        
+
     </div>
 
     <script src="/js/multi.js" type="module"></script>

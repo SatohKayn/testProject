@@ -37,17 +37,7 @@ function computerGo() {
     if (!gameOver) {
         turnDisplay.textContent = 'Computer Go'
         infoDisplay.textContent = ''
-        computerMaveMove()
-        if(currentPlayer == 'user'){
-            setTimeout(() => {
-                turnDisplay.textContent = 'Your Go'
-                infoDisplay.textContent = ''
-                currentPlayer = 'user'
-                const computerBlock = document.querySelectorAll('#enemy div')
-                computerBlock.forEach(block => block.addEventListener('click', handleClick))
-            }, 1000)
-        }
-        
+        setTimeout(computerMaveMove(), 1000)
     }
 }
 
@@ -117,6 +107,13 @@ function computerMaveMove() {
         infoDisplay.textContent = 'Computer miss'
         currentPlayer = 'user'
         userBlock[randomGo].classList.add('miss')
+        setTimeout(() => {
+            turnDisplay.textContent = 'Your Go'
+            infoDisplay.textContent = ''
+            currentPlayer = 'user'
+            const computerBlock = document.querySelectorAll('#enemy div')
+            computerBlock.forEach(block => block.addEventListener('click', handleClick))
+        }, 2000)
     }
 }
 
@@ -196,8 +193,7 @@ function checkScore(user, userHit, userSunkShip) {
         gameOver = true
         infoDisplay.textContent = 'Enemy Win'
     }
-    if(gameOver)
-    {
+    if (gameOver) {
         startButton.addEventListener('click', () => {
             location.reload()
         })

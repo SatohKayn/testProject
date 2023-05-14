@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const path = require('path')
 const http = require('http')
@@ -6,74 +8,109 @@ const socketio = require('socket.io')
 const app = express()
 const server = http.createServer(app)
 const io = socketio(server)
-const { makeid } = require('./utils.js')
-// Set static folder
-
+const { createRoom, findRoom, getPlayerNum } = require('./utils/utils.js')
+const mongoose = require('mongoose')
+const { error } = require('console')
+const cookieParser = require("cookie-parser")
+const { validateToken } = require("./utils/JWT");
+const authRoute = require('./app/routes/authRoute.js')
+const Player = require('./app/models/playerModel.js')
+const { sign, verify } = require("jsonwebtoken");
+const multer = require('multer');
+const upload = multer({
+    dest: path.join(__dirname, 'public/images/')
+});
 let roomList = io.sockets.adapter.rooms
 let rooms = []
 let roomId = null
 
+app.use(express.json())
+app.use(cookieParser())
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, '/app/views'));
 app.use(express.static(path.join(__dirname, "public")))
 
-app.use(express.static(__dirname))
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
+mongoose
+    .connect(process.env.DATABASE_URL).then(() => {
+        console.log('connected')
+    }).catch(() => {
+        console.log(error)
+    })
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+app.use('/user', authRoute)
+
+app.get('/register', (req, res) => {
+    res.render('register');
 });
 
-app.get('/multi/rooms/:roomId', (req, res) => {
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.get('/',validateToken,  async (req, res) => {
+    try {
+        const user = await Player.findById(req.id);
+        res.render('index', { user: user });
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+});
+
+app.get('/users/:id', validateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await Player.findById(id);
+        res.render('profile', { user: user });
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+})
+
+app.post('/profile/update-image', validateToken, upload.single('profileImage'), async (req, res) => {
+    const file = req.file;
+    try {
+        const user = await Player.findById(req.id);
+        user.image = `/images/${file.filename}`
+        await user.save();
+        res.redirect(`users/${user.id}`)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+})
+
+app.post('/logout', (req, res) => {
+    res.clearCookie('access-token', { expires: new Date(0) });
+    res.json({success:true, message: 'Logged out successfully.' });
+  });
+
+app.get('/multi/rooms/:roomId', validateToken, async (req, res) => {
     roomId = req.params.roomId;
-    res.sendFile(__dirname + '/public/multiPlay.html');
+    const user = await Player.findById(req.id);
+    res.render('multiPlay', { user: user })
 });
 
 app.get('/single', (req, res) => {
-    res.sendFile(__dirname + '/public/singlePlay.html');
+    res.render('singlePlay')
 });
 
-app.get('/multi/createroom', (req, res) => {
-    const roomId = createRoom()
+app.get('/rank', (req, res) => {
+    // rooms.forEach(room => {
+    //     if(room.rank)
+    // })
+    res.render('singlePlay')
+});
+
+app.get('/multi/createroom', validateToken, (req, res) => {
+    const roomId = createRoom(roomList, rooms, false)
     res.redirect(`/multi/rooms/${roomId}`)
 });
-
-// Start server
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
-
-function createRoom() {
-    roomId = makeid(9)
-    roomList.set(roomId, new Set())
-    var obj = {
-        "roomid": roomId,
-        "connections": [false, false],
-        "readys": [null, null],
-        "timers": [null, null],
-        "playerTimers": [600000, 600000],
-        "currentPlayer": null,
-        "winner": null
-    }
-    rooms.push(obj)
-    return roomId
-}
-
-function findRoom(roomId) {
-    for (let i = 0; i < rooms.length; i++) {
-        if (rooms[i].roomid == roomId)
-            return i
-    }
-}
-
-function getPlayerNum(connections){
-    for(let i = 0; i < connections.length; i++){
-        if(!connections[i]){
-            return i + 1
-        }
-    }
-}
 
 io.on("connection", socket => {
     socket.on('join-room', (room) => {
         let status = true
-        let index = findRoom(room)
+        let index = findRoom(room, rooms)
         if (!roomList.has(room) || roomList.get(room).size == 2) {
             status = false
             socket.emit('join-room-status', status)
@@ -88,7 +125,7 @@ io.on("connection", socket => {
 
     socket.on('player-ready', () => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        let index = findRoom(roomId)
+        let index = findRoom(roomId, rooms)
         rooms[index].readys[socket.number - 1] = true
         let enemyReady = true
         socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
@@ -96,16 +133,16 @@ io.on("connection", socket => {
 
     socket.on('disconnecting', () => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        let index = findRoom(roomId)
-        if(rooms[index] != null){
-            rooms[index].connections[socket.number - 1] = false 
+        let index = findRoom(roomId, rooms)
+        if (rooms[index] != null) {
+            rooms[index].connections[socket.number - 1] = null
             io.to(roomId).emit('player-connection', rooms[index].connections)
-        }      
+        }
     })
 
     socket.on('check-player', () => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        let index = findRoom(roomId)
+        let index = findRoom(roomId, rooms)
         let roomStatus = false
         var a = [true, true]
         if (JSON.stringify(rooms[index].readys) == JSON.stringify(a)) {
@@ -116,7 +153,7 @@ io.on("connection", socket => {
 
     socket.on('turn-start', (playerNum) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
-        let index = findRoom(roomId)
+        let index = findRoom(roomId, rooms)
         rooms[index].currentPlayer = playerNum
         io.to(roomId).emit('player-turn', (rooms[index].currentPlayer))
         clearInterval(rooms[index].timers[rooms[index].currentPlayer % 2])
