@@ -2,7 +2,9 @@
 <html>
 
 <head>
+    <link rel="icon" href="data:,">
     <title>User Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <style>
         body {
             background: linear-gradient(-135deg, #c850c0, #4158d0);
@@ -74,7 +76,25 @@
                 </form>
             </div>
             <div class="rank-container">
+                <% if (user.point <= 1199) { %>
                 <img class="rank-image" src="/images/iron.png" alt="Rank Image">
+                <% } else if (user.point <= 1399) { %>
+                    <img class="rank-image" src="/images/bronze.png" alt="Rank Image">
+                <% } else if (user.point <= 1599) { %>
+                    <img class="rank-image" src="/images/silver.png" alt="Rank Image">
+                <% } else if (user.point <= 1799) { %>
+                    <img class="rank-image" src="/images/gold.png" alt="Rank Image">
+                <% } else if (user.point <= 1999) { %>
+                    <img class="rank-image" src="/images/platinum.png" alt="Rank Image">
+                <% } else if (user.point <= 2199) { %>
+                    <img class="rank-image" src="/images/diamond.png" alt="Rank Image">
+                <% } else if (user.point <= 2399) { %>
+                    <img class="rank-image" src="/images/master.png" alt="Rank Image">
+                <% } else if (user.point <= 2599) { %>
+                    <img class="rank-image" src="/images/grandmaster.png" alt="Rank Image">
+                <% } else if (user.point > 2799) { %>
+                    <img class="rank-image" src="/images/challenger.png" alt="Rank Image">
+                <% } %>
                 <span class="rank-points">Point: <%= user.point %></span>
             </div>
             <div class="stats-container">

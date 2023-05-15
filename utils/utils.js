@@ -21,7 +21,7 @@ function createRoom(roomList, rooms, rank) {
   roomList.set(roomId, new Set())
   var obj = {
     "roomid": roomId,
-    "rank":rank,
+    "rank": rank,
     "connections": [null, null],
     "readys": [null, null],
     "timers": [null, null],
@@ -47,3 +47,5 @@ function getPlayerNum(connections) {
     }
   }
 }
+
+

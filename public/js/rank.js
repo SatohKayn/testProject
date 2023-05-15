@@ -8,13 +8,14 @@ const hitSound = new Audio('/images/BombHit.mp3');
 const missSound = new Audio('/images/BombMiss.mp3');
 const backgroundSound = new Audio('/images/Battleship.mp3');
 const socket = io();
+let angle = 0
 let currentPlayer = 'user'
 let gameOver = false
 let playerNum = null
-let playerReady = false
-let enemyReady = false
 let userHits = []
 let enemyHits = []
+let playerReady = false
+let enemyReady = false
 let winner = null
 const userSunkShips = []
 const enemySunkShips = []
@@ -22,22 +23,7 @@ let shot = -1;
 let roomId = null
 import gameBoard from '../gameObject/gameBoard.js'
 import listShip from '../gameObject/listShip.js'
-
-roomId = window.location.pathname.split('/').pop();
-joinGame(roomId)
-
-const copyButton = document.getElementById('copy-button');
-copyButton.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('URL copied to clipboard');
-});
-
-const popupButton = document.getElementById('popup-button');
-popupButton.addEventListener('click', () => {
-    var popup = window.open("", "QRCODE", "width= 300, height=300")
-    popup.document.write(`<img src=https://chart.googleapis.com/chart?cht=qr&chl=${window.location.href}&chs=256x256&choe=UTF-8&chld=L|0>`)
-})
-
+joinGame(room)
 function joinGame(roomId) {
     startButton.addEventListener('click', function () {
         playerReadys()
@@ -46,8 +32,6 @@ function joinGame(roomId) {
     socket.emit('join-room', roomId, user._id)
 
     socket.on('join-room-status', (status) => { handleJoinRoom(status) })
-
-    document.getElementById('room-code').textContent = roomId;
 
     socket.on('enemy-ready', (enemystatus, msg) => { handleEnemyReady(enemystatus, msg) })
 
@@ -59,8 +43,6 @@ function joinGame(roomId) {
         if (roomStatus) {
             if (playerNum == 1)
                 socket.emit('turn-start', playerNum)
-            document.getElementById('code-display').style.display = "none";
-            document.querySelector('.setup-buttons').style.display = "none";
             handlePlayGameMulti()
         }
     })
@@ -223,7 +205,7 @@ function checkScore(user, userHit, userSunkShip) {
         gameOver = true
         winner = playerNum % 2 + 1
     }
-    if (gameOver) {
+    if (gameOver && playerNum == winner) {
         socket.emit('game-winner', winner)
     }
 }

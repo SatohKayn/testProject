@@ -4,6 +4,7 @@
 <head>
     <link rel="icon" href="data:,">
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Battleship</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="/css/style.css">
@@ -48,21 +49,14 @@
             <p>Turn: <span id="turn-display"></span></p>
             <p>Info: <span id="info"></span></p>
         </div>
-        <div class="ship-display">
-            <div class="ship destroyer-ship destroyer" draggable="true"></div>
-            <div class="ship submarine-ship submarine" draggable="true"></div>
-            <div class="ship cruiser-ship cruiser" draggable="true"></div>
-            <div class="ship battleship-ship battleship" draggable="true"></div>
-            <div class="ship carrier-ship carrier" draggable="true"></div>
-        </div>
-
         <div class="setup-buttons">
-            <button id="rotate-button" class="btngame">ROTATE</button>
             <button id="start-button" class="btngame">START GAME</button>
         </div>
 
     </div>
-
+    <script>
+        var user = <%- JSON.stringify(user) %>;
+    </script>
     <script src="/js/multi.js" type="module"></script>
 </body>
 

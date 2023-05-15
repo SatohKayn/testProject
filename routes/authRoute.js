@@ -1,21 +1,12 @@
 const router = require('express').Router()
 const bcrypt = require('bcrypt')
 const Player = require('../models/playerModel.js')
-const { sign } = require("jsonwebtoken");
 const joi = require('@hapi/joi')
-
+const {createTokens } = require("../utils/JWT");
 const schema = joi.object({
     username: joi.string().min(6).required(),
     password: joi.string().min(6).required()
 }) 
-const createTokens = (user) => {
-    const accessToken = sign(
-        { username: user.username, id: user.id},
-        process.env.SECRET_KEY
-    );
-    return accessToken;
-};
-
 router.post('/register', async (req, res) => {
     const {error} = schema.validate(req.body)
     if(error) return res.json({ success: false, message: error.details[0].message})
