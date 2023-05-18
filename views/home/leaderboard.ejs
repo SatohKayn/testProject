@@ -82,8 +82,12 @@
         <span class="name">
           <%= player._doc.username %>
         </span>
+        <% if (player._doc.wins != 0 || player._doc.loses !=0) { %>
         <span class="name">Win rate: <%= Math.floor(player._doc.wins/(player._doc.wins + player._doc.loses) * 100) %>
             %</span>
+        <% } else { %>
+          <span class="name">NA</span>
+        <% } %>
         <span class="score">Score: <%= player._doc.point %></span>
       </li>
       <% }); %>

@@ -58,7 +58,7 @@ router.post('/login', (req, res) => {
                             httpOnly: true,
                         });
 
-                        res.json({ success: true, message: 'LOGGED IN' });
+                        res.json({ success: true, message: 'Log in successful' });
                     } else {
                         res.json({ success: false, message: 'Invalid username or password' });
                     }

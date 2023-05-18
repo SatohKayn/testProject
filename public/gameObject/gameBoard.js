@@ -13,7 +13,7 @@ function createBoard(user, gameboard) {
 }
 
 function randomShip(ship, user) {
-    const computerBlock = document.querySelectorAll(`#${user} div`)
+    const randomBlock = document.querySelectorAll(`#${user} div`)
     let randomIndex = Math.floor(Math.random() * width * width)
     let randomDirection = Math.random() < 0.5
     let shipBlocks = []
@@ -32,9 +32,9 @@ function randomShip(ship, user) {
     }
     for (let i = 0; i < ship.length; i++) {
         if (randomDirection) {
-            shipBlocks.push(computerBlock[Number(randomIndex) + i])
+            shipBlocks.push(randomBlock[Number(randomIndex) + i])
         } else {
-            shipBlocks.push(computerBlock[Number(randomIndex) + i * width])
+            shipBlocks.push(randomBlock[Number(randomIndex) + i * width])
         }
     }
     const nottaken = shipBlocks.every(shipBlock => !shipBlock.classList.contains('taken'))

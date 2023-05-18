@@ -23,6 +23,10 @@ let shot = -1;
 let roomId = null
 import gameBoard from '../gameObject/gameBoard.js'
 import listShip from '../gameObject/listShip.js'
+gameBoard.createBoard('user', gameboard)
+    gameBoard.createBoard('enemy', gameboard)
+const userBlocks = document.querySelectorAll('#user div')
+    const enemyBlocks = document.querySelectorAll('#enemy div')
 joinGame(room)
 function joinGame(roomId) {
     startButton.addEventListener('click', function () {
@@ -46,7 +50,20 @@ function joinGame(roomId) {
             handlePlayGameMulti()
         }
     })
-
+    socket.on('game-started', (gameStart, player) => {
+        if(gameStart){
+            document.getElementById('code-display').style.display = "none";
+            document.querySelector('.setup-buttons').style.display = "none";
+            if (player == playerNum) {
+                currentPlayer = 'user'
+                turnDisplay.innerHTML = 'Your Turn'
+            } else {
+                currentPlayer = 'enemy'
+                turnDisplay.innerHTML = 'Enemy Turn'
+            }
+            handlePlayGameMulti()
+        }
+    })
     socket.on('timerTick', (playerNum, time) => {
         document.querySelector(`.p${playerNum} .timer`).innerHTML = formatDuration(time)
     })
@@ -54,6 +71,7 @@ function joinGame(roomId) {
     socket.on('player-connection', (connections) => {
         for (let i = 0; i < 2; i++) {
             if (connections[i]) {
+                document.querySelector(`.p${i + 1} .player-name`).textContent = connections[i].username;
                 document.querySelector(`.p${i + 1} .img`).setAttribute('src', connections[i].image);
                 document.querySelector(`.p${i + 1} .connected`).classList.add('active')
             } else {
@@ -63,18 +81,16 @@ function joinGame(roomId) {
         }
     })
 
+
     socket.on('game-winner', (number) => {
         gameOver = true
         alert(`player ${number} win`)
-        // window.location.href = `http://` + window.location.host
+        setTimeout(() => {
+            window.location.href = `http://` + window.location.host
+        }, 1000)
+        
     })
-
-    gameBoard.createBoard('user', gameboard)
-    gameBoard.createBoard('enemy', gameboard)
-    listShip.forEach(ship => gameBoard.randomShip(ship, 'user'))
-    const userBlocks = document.querySelectorAll('#user div')
-    const enemyBlocks = document.querySelectorAll('#enemy div')
-
+    
     function handlePlayGameMulti() {
         backgroundSound.loop = true;
         backgroundSound.volume = 0.5; 
@@ -116,7 +132,7 @@ function joinGame(roomId) {
             }
             checkScore('enemy', enemyHits, enemySunkShips)
             const block = userBlocks[id]
-            socket.emit('fire-reply', block.classList)
+            socket.emit('fire-reply', block.classList, id)
         })
 
         // On Fire Reply Received
@@ -169,6 +185,35 @@ function handleJoinRoom(status) {
         alert('join room failed')
         window.location.href = `http://` + window.location.host
     }
+}
+function checkGameState(gameState){
+    if(gameState.shipPlaced.length == 0)
+    {
+        listShip.forEach(ship => gameBoard.randomShip(ship, 'user'))
+        const shipPlaced = Array.from(userBlocks).filter(shipBlock => shipBlock.classList.contains('taken'))
+        const shipData = shipPlaced.map(shipBlock => {
+            return {
+              id: shipBlock.id,
+              listClass: Array.from(shipBlock.classList)
+            };
+          });     
+        socket.emit('ship-placed', shipData);
+    } else {
+        updateGameState(gameState)
+    }
+}
+function updateGameState(gameState){
+    console.log(gameState)
+    gameState.shipPlaced.forEach(shipBlock  => {
+        for(let i = 0; i < shipBlock.listClass.length; i++){
+            userBlocks[shipBlock.id].classList.add(shipBlock.listClass[i])
+        }
+    })
+    gameState.shot.forEach(shot => {
+        for(let i = 0; i < shot.listClass.length; i++){
+            enemyBlocks[shot.id].classList.add(shot.listClass[i])
+        }
+    })
 }
 const popup = document.querySelector('.popup')
 const closePopup = document.querySelector('.close-popup');

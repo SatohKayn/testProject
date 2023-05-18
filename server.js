@@ -42,17 +42,17 @@ mongoose
 app.use('/user', authRoute)
 
 app.get('/register', (req, res) => {
-    res.render('register');
+    res.render('home/register');
 });
 
 app.get('/login', (req, res) => {
-    res.render('login');
+    res.render('home/login');
 });
 
 app.get('/', validateToken, async (req, res) => {
     try {
         const user = await Player.findById(req.id);
-        res.render('index', { user: user });
+        res.render('home/index', { user: user });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -62,7 +62,7 @@ app.get('/users/:id', validateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const user = await Player.findById(id);
-        res.render('profile', { user: user });
+        res.render('home/profile', { user: user });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -88,11 +88,11 @@ app.post('/logout', (req, res) => {
 app.get('/multi/rooms/:roomId', validateToken, async (req, res) => {
     roomId = req.params.roomId;
     const user = await Player.findById(req.id);
-    res.render('multiPlay', { user: user })
+    res.render('game/multiPlay', { user: user })
 });
 
 app.get('/single', (req, res) => {
-    res.render('singlePlay')
+    res.render('game/singlePlay')
 });
 
 app.get('/rank', validateToken, async (req, res) => {
@@ -100,7 +100,7 @@ app.get('/rank', validateToken, async (req, res) => {
     roomId = await getRoomId(rooms, req.id, roomList)
     if (!roomId)
         roomId = createRoom(roomList, rooms, true)
-    res.render('rank', { user: user, room: roomId })
+    res.render('game/rank', { user: user, room: roomId })
 });
 
 app.get('/multi/createroom', validateToken, (req, res) => {
@@ -115,19 +115,17 @@ app.get('/leaderboard', async (req, res) => {
         const playersPerPage = 10;
         const startIndex = (page - 1) * playersPerPage;
         const endIndex = page * playersPerPage;
-        const players = leaderboardData.slice(startIndex, endIndex);
-        const sortedPlayers = players.sort((a, b) => b.point - a.point);
-        const playersWithIndex = sortedPlayers.map((player, index) => ({
+        const sortedPlayers = leaderboardData.sort((a, b) => b.point - a.point);
+        const players = sortedPlayers.slice(startIndex, endIndex);
+        const playersWithIndex = players.map((player, index) => ({
             ...player,
             index: index + 1
         }));
         const totalPages = Math.ceil(leaderboardData.length / playersPerPage);
-        res.render('leaderboard', { players: playersWithIndex, currentPage: page, totalPages });
-
+        res.render('home/leaderboard', { players: playersWithIndex, currentPage: page, totalPages });
     } catch (error) {
         res.status(500).json({ error: 'Failed to retrieve players' });
     }
-
 });
 
 
@@ -159,18 +157,33 @@ function pointCalculate(user1, user2, actualScore) {
 }
 io.on("connection", (socket) => {
     socket.on('join-room', async (room, userId) => {
-        let status = true
+        let status = {}
         let index = findRoom(room, rooms)
-        if (!roomList.has(room) || roomList.get(room).size == 2) {
-            status = false
+        if (!roomList.has(room) ) {
+            status = { success: false, message: 'Room not found' }
+            socket.emit('join-room-status', status)
+            return
+        }
+        if(roomList.get(room).size == 2){
+            status = { success: false, message: 'Room full' }
+            socket.emit('join-room-status', status)
+            return
+        }
+        if(rooms[index].usersIP.includes(socket.handshake.address)){
+            status = { success: false, message: 'You cant join your own room' }
             socket.emit('join-room-status', status)
             return
         }
         socket.join(room)
         socket.number = getPlayerNum(rooms[index].connections)
+        rooms[index].usersIP[socket.number - 1] = socket.handshake.address
         rooms[index].connections[socket.number - 1] = await Player.findById(userId)
         io.to(roomId).emit('player-connection', rooms[index].connections)
         socket.emit('player-number', socket.number)
+        socket.emit('game-state', rooms[index].gameState[socket.number - 1])
+        if(rooms[index].gameStart){      
+            socket.emit('game-started', rooms[index].gameStart, rooms[index].currentPlayer)
+        }           
     })
 
     socket.on('player-ready', () => {
@@ -179,6 +192,13 @@ io.on("connection", (socket) => {
         rooms[index].readys[socket.number - 1] = true
         let enemyReady = true
         socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
+        
+    })
+
+    socket.on('ship-placed', shipPlaced => {
+        let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+        let index = findRoom(roomId, rooms)
+        rooms[index].gameState[socket.number - 1].shipPlaced = shipPlaced
     })
 
     socket.on('disconnecting', () => {
@@ -196,6 +216,7 @@ io.on("connection", (socket) => {
         let roomStatus = false
         var a = [true, true]
         if (JSON.stringify(rooms[index].readys) == JSON.stringify(a)) {
+            rooms[index].gameStart = true
             roomStatus = true
             io.to(roomId).emit('check-player', (roomStatus))
         }
@@ -217,11 +238,34 @@ io.on("connection", (socket) => {
 
     socket.on('fire', (shot) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+        let index = findRoom(roomId, rooms)
+        const find = rooms[index].gameState[socket.number % 2].shipPlaced.find(obj => obj.id == shot)
+        if(find){
+            rooms[index].gameState[socket.number - 1].shot.push({
+                id: shot,
+                listClass: ['boom']
+            })
+        } else {
+            rooms[index].gameState[socket.number - 1].shot.push({
+                id: shot,
+                listClass: ['miss']
+            })
+        }
         socket.to(roomId).emit('fire', shot)
     })
 
-    socket.on('fire-reply', classList => {
+    socket.on('fire-reply', (classList, id) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
+        let index = findRoom(roomId, rooms)
+        const find = rooms[index].gameState[socket.number - 1].shipPlaced.find(obj => obj.id == id)
+        if(find){         
+            find.listClass = Array.from(Object.values(classList))
+        } else {
+            rooms[index].gameState[socket.number - 1].shipPlaced.push({
+                id: id,
+                listClass: ['miss']
+            })
+        }
         socket.to(roomId).emit('fire-reply', classList)
     })
 

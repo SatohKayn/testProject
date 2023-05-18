@@ -40,9 +40,11 @@
 				</div>
 			</div>
 		</div>
-    <div id="popup" class="popup" >
+    <div id="popup" class="popup">
       <div class="popup-content">
-        <span class="close" onclick="closePopup()">&times;</span>
+        <div class="imgbox">
+          <img src="" alt="" class="img" id="img-popup">
+        </div>
         <p id="popupMessage"></p>
       </div>
     </div>
@@ -67,9 +69,12 @@
         .then(response => response.json())
         .then(result => {
           if (result.success) {
-            window.location.href = window.location.protocol + "/login"
+            showPopup(result.message, result.success)
+            setTimeout(() => {
+              window.location.href = window.location.protocol + "/login"
+            }, 2000)          
           } else {
-            showErrorPopup(result.message)
+            showPopup(result.message, result.success)
           }
         })
         .catch(error => {
@@ -77,17 +82,23 @@
           // Handle error
         });
     });
-    function showErrorPopup(message) {
+    function showPopup(message, success) {
       const popup = document.getElementById('popup');
       const popupMessage = document.getElementById('popupMessage');
-      popupMessage.textContent = message;
+      const imgpopup = document.getElementById('img-popup');   
       popup.style.display = 'block';
-    }
-
-    // Function to close the popup
-    function closePopup() {
-      const popup = document.getElementById('popup');
-      popup.style.display = 'none';
+      imgpopup.src = "/images/loading-gif.gif"
+      setTimeout(() => {
+        if (success)
+          imgpopup.src = "/images/checked.png";
+        else
+          imgpopup.src = "/images/cancel.png";
+        popupMessage.textContent = message;
+      }, 1000)
+      setTimeout(()=>{
+        popup.style.display = 'none';
+        popupMessage.textContent = ""
+      }, 2000)
     }
   </script>
 </body>

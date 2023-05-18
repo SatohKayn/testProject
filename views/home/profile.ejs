@@ -5,13 +5,17 @@
     <link rel="icon" href="data:,">
     <title>User Profile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(-135deg, #c850c0, #4158d0);
+            
         }
 
         .card {
-            width: 400px;
+            font-family: 'Bebas Neue', cursive;
+            width: 500px;
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -64,6 +68,29 @@
 </head>
 
 <body>
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li><a href="/">Home</a></li>
+            <li><a href="https://www.hasbro.com/common/instruct/battleship.pdf">Rules</a></li>
+            <li><a href="/leaderboard">Leaderboard</a></li>
+        </ul>
+        <div class="auth-buttons">
+            <% if (user) { %>
+                <div class="dropdown" id="user-profile-link">
+                    <img src="<%= user.image %>" alt="Profile Image">
+                    <ul class="dropdown-menu">
+                        <li><a href="/users/<%= user.id %>">My Profile</a></li>
+                        <li><a href="/logout" onclick="performPostRequest()">Log Out</a></li>
+                    </ul>
+                </div>
+                <% } else { %>
+                    <div id="authbutton">
+                        <a href="/register" class="register-button">Register</a>
+                        <a href="/login" class="login-button">Login</a>
+                    </div>
+                    <% } %>
+        </div>
+    </nav>
     <div class="card">
         <div class="profile-container">
             <h1>Welcome <%= user.username %>
@@ -111,13 +138,23 @@
                     </p>
                 </div>
             </div>
+            <% if (user.wins != 0 || user.loses != 0) { %>
             <div id="piechart"></div>
+            <% } %>
             <div class="last-match">
                 <h3>Last Match</h3>
             </div>
         </div>
     </div>
-    
+    <footer class="footer">
+        <div class="container1">
+          <div class="footer-content">
+            <div class="footer-left">
+              <p>&copy; 2023 My team "AKY" website. All rights reserved. An-Khang-Yên</p>
+            </div>
+          </div>
+        </div>
+      </footer>
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
@@ -136,7 +173,7 @@
             ]);
 
             // Optional; add a title and set the width and height of the chart
-            var options = { 'title': 'Win rates', 'width': 400, 'height': 400 };
+            var options = { 'title': 'Win rates', 'width': 500, 'height': 300 };
 
             // Display the chart inside the <div> element with id="piechart"
             var chart = new google.visualization.PieChart(document.getElementById('piechart'));

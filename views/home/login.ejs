@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="icon" href="data:,">
+  <title>Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="images/icons/favicon.ico" />
+  <link rel="stylesheet" type="text/css" href="/css/util.css">
+  <link rel="stylesheet" type="text/css" href="/css/main.css">
+</head>
+
+<body>
+
+  <div class="limiter">
+    <div class="container-login100">
+      <div class="wrap-login100">
+        <div class="login100-pic js-tilt" data-tilt>
+          <img
+            src="https://cdn.dribbble.com/users/2599836/screenshots/7638243/media/8091ebb61a6cdb2fe9c0e678b65485ae.png?compress=1&resize=400x300"
+            alt="IMG">
+        </div>
+
+        <form id="loginForm" class="login100-form validate-form">
+          <span class="login100-form-title">
+            Member Login
+          </span>
+
+          <div class="wrap-input100 validate-input">
+            <input class="input100" type="text" name="username" placeholder="Username">
+            <span class="focus-input100"></span>
+          </div>
+
+          <div class="wrap-input100 validate-input" data-validate="Password is required">
+            <input class="input100" type="password" name="pass" placeholder="Password">
+            <span class="focus-input100"></span>
+          </div>
+
+          <div class="container-login100-form-btn">
+            <button class="login100-form-btn">
+              Login
+            </button>
+          </div>
+          <div class="text-center p-t-136">
+            <a class="txt2" href="/register">
+              Create your Account
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div id="popup" class="popup">
+    <div class="popup-content">
+      <div class="imgbox">
+        <img src="" alt="" class="img" id="img-popup">
+      </div>
+      <p id="popupMessage"></p>
+    </div>
+  </div>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const username = loginForm.username.value;
+      const password = loginForm.pass.value;
+
+      const data = { username, password };
+
+      fetch('/user/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            showPopup(result.message, result.success)
+            setTimeout(() => {
+              window.location.href = window.location.protocol + "/"
+            }, 2000)
+            
+          } else {
+            showPopup(result.message, result.success)
+          }
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    });
+
+
+    function showPopup(message, success) {
+      const popup = document.getElementById('popup');
+      const popupMessage = document.getElementById('popupMessage');
+      const imgpopup = document.getElementById('img-popup');   
+      popup.style.display = 'block';
+      imgpopup.src = "/images/loading-gif.gif"
+      setTimeout(() => {
+        if (success)
+          imgpopup.src = "/images/checked.png";
+        else
+          imgpopup.src = "/images/cancel.png";
+        popupMessage.textContent = message;
+      }, 1000)
+      setTimeout(()=>{
+        popup.style.display = 'none';
+        popupMessage.textContent = ""
+      }, 2000)
+    }
+  </script>
+</body>
+
+</html>

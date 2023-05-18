@@ -21,13 +21,24 @@ function createRoom(roomList, rooms, rank) {
   roomList.set(roomId, new Set())
   var obj = {
     "roomid": roomId,
-    "rank": rank,
     "connections": [null, null],
     "readys": [null, null],
     "timers": [null, null],
+    "rank": rank,
     "playerTimers": [600000, 600000],
     "currentPlayer": null,
-    "winner": null
+    "winner": null,
+    "usersIP" : [null, null],
+    "gameStart": false,
+    "gameState": [{
+      "shipPlaced": [],
+      "shot" : [],
+      "shipSunks": []
+    }, {
+      "shipPlaced": [],
+      "shot" : [],
+      "shipSunks": []
+    }],
   }
   rooms.push(obj)
   return roomId

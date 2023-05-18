@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .navbar {
+            background-color: #333;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .nav-list li {
+            margin-right: 10px;
+        }
+
+        .nav-list li:last-child {
+            margin-right: 0;
+        }
+
+        .nav-list li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 5px;
+        }
+
+        .nav-list li a:hover {
+            background-color: #555;
+            border-radius: 4px;
+        }
+
+        .auth-buttons {
+            display: flex;
+        }
+
+        .register-button,
+        .login-button {
+            color: #fff;
+            text-decoration: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            background-color: #555;
+            border-radius: 4px;
+        }
+
+        .register-button:hover,
+        .login-button:hover {
+            background-color: #777;
+        }
+
+        /* Existing CSS styles */
+
+        #user-profile-link {
+            color: #fff;
+            text-decoration: none;
+            padding: 5px;
+            margin-left: 10px;
+            background-color: #555;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #user-profile-link img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 100%;
+            /* Change to right: 0; to align with the left edge */
+            background-color: #f9f9f9;
+            padding: 10px;
+            /* Adjust the padding to create spacing around the menu items */
+            margin: 0;
+            list-style: none;
+            z-index: 999;
+            /* Add a higher z-index value */
+            font-family: Arial, sans-serif;
+            /* Change to your desired font */
+            font-size: 14px;
+            /* Change to your desired font size */
+            width: 100px;
+            /* Adjust the width to your preferred size */
+        }
+
+        .dropdown .dropdown-menu li {
+            padding: 10px;
+        }
+
+        .dropdown .dropdown-menu li {
+            padding: 10px;
+            transition: background-color 0.3s;
+            /* Add transition effect for hover */
+        }
+
+        .dropdown .dropdown-menu li:hover {
+            background-color: #ebebeb;
+            /* Change to your desired hover background color */
+        }
+
+        .dropdown:hover .dropdown-menu {
+            display: inline-block;
+            /* Change to display: inline-block; to make it visible on hover */
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <ul class="nav-list">
+                <li><a href="/">Home</a></li>
+                <li><a href="https://www.hasbro.com/common/instruct/battleship.pdf">Rules</a></li>
+                <li><a href="/leaderboard">Leaderboard</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <% if (user) { %>
+                    <div class="dropdown" id="user-profile-link">
+                        <img src="<%= user.image %>" alt="Profile Image">
+                        <ul class="dropdown-menu">
+                            <li><a href="/users/<%= user.id %>">My Profile</a></li>
+                            <li><a href="/logout" onclick="performPostRequest()">Log Out</a></li>
+                        </ul>
+                    </div>
+                    <% } else { %>
+                        <div id="authbutton">
+                            <a href="/register" class="register-button">Register</a>
+                            <a href="/login" class="login-button">Login</a>
+                        </div>
+                        <% } %>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Include main content here -->
+        <%= content %>
+    </main>
+
+    <footer>
+        <p>&copy; <%= year %> Your Website. All rights reserved.</p>
+    </footer>
+</body>
+
+</html>
