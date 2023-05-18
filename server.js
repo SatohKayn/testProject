@@ -156,7 +156,7 @@ function pointCalculate(user1, user2, actualScore) {
     return Math.floor(ratingChange);
 }
 io.on("connection", (socket) => {
-    const userIP = socket.handshake.address
+    const userIP = socket.request.connection.remoteAddress
     console.log(userIP)
     socket.on('join-room', async (room, userId) => {
         let status = {}
@@ -171,11 +171,11 @@ io.on("connection", (socket) => {
             socket.emit('join-room-status', status)
             return
         }
-        // if(rooms[index].usersIP.includes(userIP)){
-        //     status = { success: false, message: 'You cant join your own room' }
-        //     socket.emit('join-room-status', status)
-        //     return
-        // }
+        if(rooms[index].usersIP.includes(userIP)){
+            status = { success: false, message: 'You cant join your own room' }
+            socket.emit('join-room-status', status)
+            return
+        }
         socket.join(room)
         socket.number = getPlayerNum(rooms[index].connections)
         rooms[index].usersIP[socket.number - 1] = userIP
