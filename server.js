@@ -7,7 +7,9 @@ const PORT = process.env.PORT || 3000
 const socketio = require('socket.io')
 const app = express()
 const server = http.createServer(app)
-const io = socketio(server)
+const io = socketio(server,{
+    ipv6: false
+})
 const { createRoom, findRoom, getPlayerNum } = require('./utils/utils.js')
 const mongoose = require('mongoose')
 const { error } = require('console')
@@ -155,8 +157,9 @@ function pointCalculate(user1, user2, actualScore) {
     const ratingChange = 32 * (actualScore - expectedScore);
     return Math.floor(ratingChange);
 }
+
 io.on("connection", (socket) => {
-    const userIP = socket.request.connection.remoteAddress
+    const userIP = socket.handshake.address
     console.log(userIP)
     socket.on('join-room', async (room, userId) => {
         let status = {}
@@ -171,11 +174,11 @@ io.on("connection", (socket) => {
             socket.emit('join-room-status', status)
             return
         }
-        if(rooms[index].usersIP.includes(userIP)){
-            status = { success: false, message: 'You cant join your own room' }
-            socket.emit('join-room-status', status)
-            return
-        }
+        // if(rooms[index].usersIP.includes(userIP)){
+        //     status = { success: false, message: 'You cant join your own room' }
+        //     socket.emit('join-room-status', status)
+        //     return
+        // }
         socket.join(room)
         socket.number = getPlayerNum(rooms[index].connections)
         rooms[index].usersIP[socket.number - 1] = userIP
