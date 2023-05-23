@@ -7,21 +7,14 @@ const PORT = process.env.PORT || 3000
 const socketio = require('socket.io')
 const app = express()
 const server = http.createServer(app)
-const io = socketio(server,{
-    ipv6: false
-})
-const { createRoom, findRoom, getPlayerNum } = require('./utils/utils.js')
+const io = socketio(server)
+const { createRoom, findRoom, getPlayerNum, getRankRoom, pointCalculate } = require('./utils/utils.js')
 const mongoose = require('mongoose')
-const { error } = require('console')
 const cookieParser = require("cookie-parser")
-const { validateToken } = require("./utils/JWT");
+const { validateToken } = require("./utils/auth.js");
 const authRoute = require('./routes/authRoute.js')
+const userRoute = require('./routes/userRoute.js')
 const Player = require('./models/playerModel.js')
-const multer = require('multer');
-const { connect } = require('http2')
-const upload = multer({
-    dest: path.join(__dirname, 'public/images/')
-});
 let roomList = io.sockets.adapter.rooms
 let rooms = []
 let roomId = null
@@ -37,7 +30,7 @@ server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 mongoose
     .connect(process.env.DATABASE_URL).then(() => {
         console.log('connected')
-    }).catch(() => {
+    }).catch((error) => {
         console.log(error)
     })
 
@@ -60,27 +53,7 @@ app.get('/', validateToken, async (req, res) => {
     }
 });
 
-app.get('/users/:id', validateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await Player.findById(id);
-        res.render('home/profile', { user: user });
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-})
-
-app.post('/profile/update-image', validateToken, upload.single('profileImage'), async (req, res) => {
-    const file = req.file;
-    try {
-        const user = await Player.findById(req.id);
-        user.image = `/images/${file.filename}`
-        await user.save();
-        res.redirect(`/users/${user.id}`)
-    } catch (error) {
-        res.status(500).json({ message: error.message })
-    }
-})
+app.use('/users', validateToken, userRoute)
 
 app.post('/logout', (req, res) => {
     res.clearCookie('access-token', { expires: new Date(0) });
@@ -99,7 +72,7 @@ app.get('/single', (req, res) => {
 
 app.get('/rank', validateToken, async (req, res) => {
     const user = await Player.findById(req.id);
-    roomId = await getRoomId(rooms, req.id, roomList)
+    roomId = await getRankRoom(rooms, req.id, roomList)
     if (!roomId)
         roomId = createRoom(roomList, rooms, true)
     res.render('game/rank', { user: user, room: roomId })
@@ -110,57 +83,7 @@ app.get('/multi/createroom', validateToken, (req, res) => {
     res.redirect(`/multi/rooms/${roomId}`)
 });
 
-app.get('/leaderboard', async (req, res) => {
-    try {
-        const leaderboardData = await Player.find();
-        const page = parseInt(req.query.page) || 1;
-        const playersPerPage = 10;
-        const startIndex = (page - 1) * playersPerPage;
-        const endIndex = page * playersPerPage;
-        const sortedPlayers = leaderboardData.sort((a, b) => b.point - a.point);
-        const players = sortedPlayers.slice(startIndex, endIndex);
-        const playersWithIndex = players.map((player, index) => ({
-            ...player,
-            index: index + 1
-        }));
-        const totalPages = Math.ceil(leaderboardData.length / playersPerPage);
-        res.render('home/leaderboard', { players: playersWithIndex, currentPage: page, totalPages });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve players' });
-    }
-});
-
-
-async function getRoomId(rooms, id, roomList) {
-    const user1 = await Player.findById(id);
-
-    for (const room of rooms) {
-        if (room.rank) {
-            for (const connection of room.connections) {
-                if (connection) {
-                    const user2 = await Player.findById(connection);
-                    if (
-                        Math.abs(user2.point - user1.point) <= 199 &&
-                        roomList.get(room.roomid).size < 2
-                    ) {
-                        return room.roomid;
-                    }
-                }
-            }
-        }
-    }
-    return null;
-}
-
-function pointCalculate(user1, user2, actualScore) {
-    const expectedScore = 1 / (1 + Math.pow(10, (user2.point - user1.point) / 400));
-    const ratingChange = 32 * (actualScore - expectedScore);
-    return Math.floor(ratingChange);
-}
-
 io.on("connection", (socket) => {
-    const userIP = socket.handshake.address
-    console.log(userIP)
     socket.on('join-room', async (room, userId) => {
         let status = {}
         let index = findRoom(room, rooms)
@@ -181,7 +104,7 @@ io.on("connection", (socket) => {
         // }
         socket.join(room)
         socket.number = getPlayerNum(rooms[index].connections)
-        rooms[index].usersIP[socket.number - 1] = userIP
+        // rooms[index].usersIP[socket.number - 1] = userIP
         rooms[index].connections[socket.number - 1] = await Player.findById(userId)
         io.to(roomId).emit('player-connection', rooms[index].connections)
         socket.emit('player-number', socket.number)
@@ -259,19 +182,25 @@ io.on("connection", (socket) => {
         socket.to(roomId).emit('fire', shot)
     })
 
-    socket.on('fire-reply', (classList, id) => {
+    socket.on('fire-reply', data => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
         let index = findRoom(roomId, rooms)
-        const find = rooms[index].gameState[socket.number - 1].shipPlaced.find(obj => obj.id == id)
+        const find = rooms[index].gameState[socket.number - 1].shipPlaced.find(obj => obj.id == data.id)
         if(find){         
-            find.listClass = Array.from(Object.values(classList))
+            find.listClass = Array.from(Object.values(data.classList))
+            rooms[index].gameState[socket.number % 2].points = parseInt(rooms[index].gameState[socket.number % 2].points, 10) + 1
+            rooms[index].gameState[socket.number % 2].shipHit = data.shipHit
+            rooms[index].gameState[socket.number % 2].shipSunks = data.shipSunks
         } else {
             rooms[index].gameState[socket.number - 1].shipPlaced.push({
-                id: id,
+                id: data.id,
                 listClass: ['miss']
             })
         }
-        socket.to(roomId).emit('fire-reply', classList)
+        socket.to(roomId).emit('fire-reply', data.classList)
+        if(rooms[index].gameState[socket.number % 2].points == 17){
+            io.to(roomId).emit('game-winner', (socket.number % 2))
+        }
     })
 
     socket.on('game-winner', async (winner) => {

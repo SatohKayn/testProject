@@ -14,8 +14,8 @@ let enemyReady = false
 let userHits = []
 let enemyHits = []
 let winner = null
-const userSunkShips = []
-const enemySunkShips = []
+let userSunkShips = []
+let enemySunkShips = []
 let shot = -1;
 let roomId = null
 import gameBoard from '../gameObject/gameBoard.js'
@@ -152,7 +152,13 @@ function joinGame(roomId) {
             }
             checkScore('enemy', enemyHits, enemySunkShips)
             const block = userBlocks[id]
-            socket.emit('fire-reply', block.classList, id)
+            const data = {
+                "classList" : block.classList,
+                "id" : id,
+                "shipHit" : enemyHits,
+                "shipSunks": enemySunkShips
+            }
+            socket.emit('fire-reply', data)
         })
 
         // On Fire Reply Received
@@ -226,7 +232,6 @@ function checkGameState(gameState){
     }
 }
 function updateGameState(gameState){
-    console.log(gameState)
     gameState.shipPlaced.forEach(shipBlock  => {
         for(let i = 0; i < shipBlock.listClass.length; i++){
             userBlocks[shipBlock.id].classList.add(shipBlock.listClass[i])
@@ -237,6 +242,8 @@ function updateGameState(gameState){
             enemyBlocks[shot.id].classList.add(shot.listClass[i])
         }
     })
+    userHits = gameState.shipHit
+    userSunkShips = gameState.shipSunks
 }
 
 const popup = document.querySelector('.popup')
@@ -266,15 +273,4 @@ function checkScore(user, userHit, userSunkShip) {
     checkShip(listShip[2].name, listShip[2].length)
     checkShip(listShip[3].name, listShip[3].length)
     checkShip(listShip[4].name, listShip[4].length)
-    if (userSunkShips.length == 5) {
-        gameOver = true
-        winner = playerNum
-    }
-    if (enemySunkShips.length == 5) {
-        gameOver = true
-        winner = playerNum % 2 + 1
-    }
-    if (gameOver) {
-        socket.emit('game-winner', winner)
-    }
 }

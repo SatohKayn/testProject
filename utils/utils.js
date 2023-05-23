@@ -2,9 +2,11 @@ module.exports = {
   makeid,
   createRoom,
   findRoom,
-  getPlayerNum
+  getPlayerNum,
+  getRankRoom,
+  pointCalculate
 }
-
+const Player = require('../models/playerModel');
 function makeid(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -27,17 +29,20 @@ function createRoom(roomList, rooms, rank) {
     "rank": rank,
     "playerTimers": [600000, 600000],
     "currentPlayer": null,
-    "winner": null,
-    "usersIP" : [null, null],
+    "usersIP": [null, null],
     "gameStart": false,
     "gameState": [{
       "shipPlaced": [],
-      "shot" : [],
-      "shipSunks": []
+      "shot": [],
+      "shipSunks": [],
+      "shipHit": [],
+      "points": 0,
     }, {
       "shipPlaced": [],
-      "shot" : [],
-      "shipSunks": []
+      "shot": [],
+      "shipSunks": [],
+      "shipHit": [],
+      "points": 0,
     }],
   }
   rooms.push(obj)
@@ -59,4 +64,29 @@ function getPlayerNum(connections) {
   }
 }
 
+async function getRankRoom(rooms, id, roomList) {
+  const user1 = await Player.findById(id);
 
+  for (const room of rooms) {
+    if (room.rank) {
+      for (const connection of room.connections) {
+        if (connection) {
+          const user2 = await Player.findById(connection);
+          if (
+            Math.abs(user2.point - user1.point) <= 199 &&
+            roomList.get(room.roomid).size < 2
+          ) {
+            return room.roomid;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function pointCalculate(user1, user2, actualScore) {
+  const expectedScore = 1 / (1 + Math.pow(10, (user2.point - user1.point) / 400));
+  const ratingChange = 32 * (actualScore - expectedScore);
+  return Math.floor(ratingChange);
+}

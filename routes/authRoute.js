@@ -2,7 +2,7 @@ const router = require('express').Router()
 const bcrypt = require('bcrypt')
 const Player = require('../models/playerModel.js')
 const joi = require('@hapi/joi')
-const {createTokens } = require("../utils/JWT");
+const {createTokens } = require("../utils/auth.js");
 const schema = joi.object({
     username: joi.string().min(6).required(),
     password: joi.string().min(6).required()

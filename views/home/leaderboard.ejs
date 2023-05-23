@@ -96,15 +96,15 @@
   <div class="pagination">
     <a href="/" class="pagination-link">Home</a>
     <% if (currentPage > 1) { %>
-      <a href="/leaderboard?page=<%= currentPage - 1 %>" class="pagination-link">Previous</a>
+      <a href="/users/leaderboard?page=<%= currentPage - 1 %>" class="pagination-link">Previous</a>
     <% } %>
   
     <% for (let i = 1; i <= totalPages; i++) { %>
-      <a href="/leaderboard?page=<%= i %>" class="pagination-link <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+      <a href="/users/leaderboard?page=<%= i %>" class="pagination-link <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
     <% } %>
   
     <% if (currentPage < totalPages) { %>
-      <a href="/leaderboard?page=<%= currentPage + 1 %>" class="pagination-link">Next</a>
+      <a href="/users/leaderboard?page=<%= currentPage + 1 %>" class="pagination-link">Next</a>
     <% } %>
   </div>
   

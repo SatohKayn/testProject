@@ -72,7 +72,7 @@
         <ul class="nav-list">
             <li><a href="/">Home</a></li>
             <li><a href="https://www.hasbro.com/common/instruct/battleship.pdf">Rules</a></li>
-            <li><a href="/leaderboard">Leaderboard</a></li>
+            <li><a href="/users/leaderboard">Leaderboard</a></li>
         </ul>
         <div class="auth-buttons">
             <% if (user) { %>
@@ -97,7 +97,7 @@
             </h1>
             <div class="container1">
                 <img class="profile-image" src="<%= user.image %>" alt="Profile Image">
-                <form action="/profile/update-image" method="POST" enctype="multipart/form-data">
+                <form action="/users/profile/update-image" method="POST" enctype="multipart/form-data">
                     <input type="file" name="profileImage">
                     <button type="submit">Edit Image</button>
                 </form>
@@ -142,7 +142,8 @@
             <div id="piechart"></div>
             <% } %>
             <div class="last-match">
-                <h3>Last Match</h3>
+                <h3>Joined At: </h3>
+                <h4><%= Date(user.createdAt) %></h4>
             </div>
         </div>
     </div>
