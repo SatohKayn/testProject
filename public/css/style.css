@@ -61,12 +61,49 @@ h1.splash-title{
   justify-content: space-between;
 }
 
-.player-container{
+.player-container {
   font-size: 1.5rem;
   display: flex;
   justify-content: space-between;
   width: 50%;
   color: red;
+  text-align: center;
+}
+
+.player-container .player-name {
+  font-weight: bold;
+}
+
+.player-container .img {
+  width: 32px;
+  height: 32px;
+}
+
+.player-container .timer {
+  font-size: 1.2rem;
+  font-weight: bold;
+  position: relative;
+}
+
+.player-container .timer:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(255, 0, 0, 0.2);
+  transform-origin: left;
+  animation: countdown linear;
+}
+
+@keyframes countdown {
+  0% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
 }
 
 .grid-board {
@@ -96,7 +133,7 @@ h1.splash-title{
 .ship-display {
   display: flex;
   align-items: center;
-  background-color: transparent;
+  background-color: hsl(30, 100%, 40%);
 }
 
 .taken,
@@ -120,8 +157,6 @@ h1.splash-title{
 }
 
 .destroyer-ship {
-  /* background-image: url('./images/Cruiser.png');
-  background-size: cover; */
   --width: 2;
 }
 
@@ -139,7 +174,25 @@ h1.splash-title{
   --width: 5;
 }
 
+.red-x::before,
+.red-x::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 2px;
+  background-color: red;
+  transform-origin: center;
+}
 
+.red-x::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.red-x::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
 .taken.start.vertical,
 .taken.start.vertical::before {
   border-top-left-radius: 50%;
@@ -497,4 +550,28 @@ label {
   padding: 0;
   margin: 0;
   display: flex;
+}
+.line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.line:before, .line:after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: red;
+  transform-origin: center;
+}
+
+.line:before {
+  transform: rotate(45deg);
+}
+
+.line:after {
+  transform: rotate(-45deg);
 }

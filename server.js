@@ -87,31 +87,31 @@ io.on("connection", (socket) => {
     socket.on('join-room', async (room, userId) => {
         let status = {}
         let index = findRoom(room, rooms)
-        if (!roomList.has(room) ) {
+        if (!roomList.has(room)) {
             status = { success: false, message: 'Room not found' }
             socket.emit('join-room-status', status)
             return
         }
-        if(roomList.get(room).size == 2){
+        if (roomList.get(room).size == 2) {
             status = { success: false, message: 'Room full' }
             socket.emit('join-room-status', status)
             return
         }
-        // if(rooms[index].usersIP.includes(userIP)){
-        //     status = { success: false, message: 'You cant join your own room' }
-        //     socket.emit('join-room-status', status)
-        //     return
-        // }
+
+        if (rooms[index].connections.find(obj => obj && obj._id && obj._id.toString() === userId)) {
+            status = { success: false, message: 'You cant join your own room' }
+            socket.emit('join-room-status', status)
+            return
+        }
         socket.join(room)
         socket.number = getPlayerNum(rooms[index].connections)
-        // rooms[index].usersIP[socket.number - 1] = userIP
         rooms[index].connections[socket.number - 1] = await Player.findById(userId)
         io.to(roomId).emit('player-connection', rooms[index].connections)
         socket.emit('player-number', socket.number)
         socket.emit('game-state', rooms[index].gameState[socket.number - 1])
-        if(rooms[index].gameStart){      
+        if (rooms[index].gameStart) {
             socket.emit('game-started', rooms[index].gameStart, rooms[index].currentPlayer)
-        }           
+        }
     })
 
     socket.on('player-ready', () => {
@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
         rooms[index].readys[socket.number - 1] = true
         let enemyReady = true
         socket.to(roomId).emit('enemy-ready', enemyReady, socket.number)
-        
+
     })
 
     socket.on('ship-placed', shipPlaced => {
@@ -162,13 +162,14 @@ io.on("connection", (socket) => {
             if (rooms[index].playerTimers[playerNum - 1] == 0)
                 io.to(roomId).emit('game-winner', (playerNum % 2 + 1))
         }, 1000);
+
     })
 
     socket.on('fire', (shot) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
         let index = findRoom(roomId, rooms)
         const find = rooms[index].gameState[socket.number % 2].shipPlaced.find(obj => obj.id == shot)
-        if(find){
+        if (find) {
             rooms[index].gameState[socket.number - 1].shot.push({
                 id: shot,
                 listClass: ['boom']
@@ -186,7 +187,7 @@ io.on("connection", (socket) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
         let index = findRoom(roomId, rooms)
         const find = rooms[index].gameState[socket.number - 1].shipPlaced.find(obj => obj.id == data.id)
-        if(find){         
+        if (find) {
             find.listClass = Array.from(Object.values(data.classList))
             rooms[index].gameState[socket.number % 2].points = parseInt(rooms[index].gameState[socket.number % 2].points, 10) + 1
             rooms[index].gameState[socket.number % 2].shipHit = data.shipHit
@@ -198,7 +199,7 @@ io.on("connection", (socket) => {
             })
         }
         socket.to(roomId).emit('fire-reply', data.classList)
-        if(rooms[index].gameState[socket.number % 2].points == 17){
+        if (rooms[index].gameState[socket.number % 2].points == 17) {
             io.to(roomId).emit('game-winner', (socket.number % 2))
         }
     })
@@ -207,17 +208,17 @@ io.on("connection", (socket) => {
         let roomId = Array.from(socket.rooms).find(roomId => roomId !== socket.id)
         let index = findRoom(roomId, rooms)
         if (rooms[index].rank) {
-            for(let i = 0; i<2; i++){
+            for (let i = 0; i < 2; i++) {
                 const user1 = await Player.findById(rooms[index].connections[i])
-                const user2 = await Player.findById(rooms[index].connections[(i+1) % 2 ])
+                const user2 = await Player.findById(rooms[index].connections[(i + 1) % 2])
                 console.log(winner)
-                if(i + 1 == winner){                    
-                    let newPoint =  pointCalculate(user1, user2, 1)
+                if (i + 1 == winner) {
+                    let newPoint = pointCalculate(user1, user2, 1)
                     user1.wins++;
                     user1.point += newPoint;
                     await user1.save()
-                }else {
-                    let newPoint =  pointCalculate(user1, user2, 0)
+                } else {
+                    let newPoint = pointCalculate(user1, user2, 0)
                     user1.loses++;
                     user1.point += newPoint;
                     await user1.save()

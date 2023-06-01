@@ -1,6 +1,4 @@
 const gameboard = document.querySelector('#gameContainer')
-const optionContainer = document.querySelector('.ship-display')
-const rotateButton = document.querySelector('#rotate-button')
 const startButton = document.querySelector('#start-button')
 const turnDisplay = document.querySelector('#turn-display')
 const infoDisplay = document.querySelector('#info')
@@ -8,7 +6,6 @@ const hitSound = new Audio('/images/BombHit.mp3');
 const missSound = new Audio('/images/BombMiss.mp3');
 const backgroundSound = new Audio('/images/Battleship.mp3');
 const socket = io();
-let angle = 0
 let currentPlayer = 'user'
 let gameOver = false
 let playerNum = null
@@ -24,9 +21,9 @@ let roomId = null
 import gameBoard from '../gameObject/gameBoard.js'
 import listShip from '../gameObject/listShip.js'
 gameBoard.createBoard('user', gameboard)
-    gameBoard.createBoard('enemy', gameboard)
+gameBoard.createBoard('enemy', gameboard)
 const userBlocks = document.querySelectorAll('#user div')
-    const enemyBlocks = document.querySelectorAll('#enemy div')
+const enemyBlocks = document.querySelectorAll('#enemy div')
 joinGame(room)
 function joinGame(roomId) {
     startButton.addEventListener('click', function () {
@@ -37,21 +34,28 @@ function joinGame(roomId) {
 
     socket.on('join-room-status', (status) => { handleJoinRoom(status) })
 
-    socket.on('enemy-ready', (enemystatus, msg) => { handleEnemyReady(enemystatus, msg) })
+    socket.on('enemy-ready', (enemystatus, number) => { handleEnemyReady(enemystatus, number) })
 
     socket.on('player-number', (num) => {
         playerNum = parseInt(num)
+    })
+
+    socket.on('game-state', (gameState) => {
+        checkGameState(gameState)
     })
 
     socket.on('check-player', (roomStatus) => {
         if (roomStatus) {
             if (playerNum == 1)
                 socket.emit('turn-start', playerNum)
+            document.getElementById('code-display').style.display = "none";
+            document.querySelector('.setup-buttons').style.display = "none";
             handlePlayGameMulti()
         }
     })
+
     socket.on('game-started', (gameStart, player) => {
-        if(gameStart){
+        if (gameStart) {
             document.getElementById('code-display').style.display = "none";
             document.querySelector('.setup-buttons').style.display = "none";
             if (player == playerNum) {
@@ -64,8 +68,10 @@ function joinGame(roomId) {
             handlePlayGameMulti()
         }
     })
+
     socket.on('timerTick', (playerNum, time) => {
         document.querySelector(`.p${playerNum} .timer`).innerHTML = formatDuration(time)
+        // startTimer(20, 0, 20)
     })
 
     socket.on('player-connection', (connections) => {
@@ -73,14 +79,11 @@ function joinGame(roomId) {
             if (connections[i]) {
                 document.querySelector(`.p${i + 1} .player-name`).textContent = connections[i].username;
                 document.querySelector(`.p${i + 1} .img`).setAttribute('src', connections[i].image);
-                document.querySelector(`.p${i + 1} .connected`).classList.add('active')
             } else {
                 document.querySelector(`.p${i + 1} .img`).setAttribute('src', '/images/loading-gif.gif');
-                document.querySelector(`.p${i + 1} .connected`).classList.remove('active')
             }
         }
     })
-
 
     socket.on('game-winner', (number) => {
         gameOver = true
@@ -88,12 +91,11 @@ function joinGame(roomId) {
         setTimeout(() => {
             window.location.href = `http://` + window.location.host
         }, 1000)
-        
     })
-    
+
     function handlePlayGameMulti() {
         backgroundSound.loop = true;
-        backgroundSound.volume = 0.5; 
+        backgroundSound.volume = 0.5;
         backgroundSound.play()
         socket.on('player-turn', (playerTurn) => {
             if (playerTurn == playerNum) {
@@ -132,7 +134,13 @@ function joinGame(roomId) {
             }
             checkScore('enemy', enemyHits, enemySunkShips)
             const block = userBlocks[id]
-            socket.emit('fire-reply', block.classList, id)
+            const data = {
+                "classList": block.classList,
+                "id": id,
+                "shipHit": enemyHits,
+                "shipSunks": enemySunkShips
+            }
+            socket.emit('fire-reply', data)
         })
 
         // On Fire Reply Received
@@ -161,7 +169,7 @@ function joinGame(roomId) {
     }
 }
 function playerReadys() {
-    if (gameOver) return
+    if (gameOver || playerReady) return
     socket.emit('player-ready')
     playerReady = true
     document.querySelector(`.p${playerNum} .ready`).classList.toggle('active')
@@ -181,60 +189,62 @@ function handleEnemyReady(enemystatus, number) {
 }
 
 function handleJoinRoom(status) {
-    if (!status) {
-        alert('join room failed')
+    console.log(status)
+    if (!status.success) {
+        alert(status.message)
         window.location.href = `http://` + window.location.host
     }
 }
-function checkGameState(gameState){
-    if(gameState.shipPlaced.length == 0)
-    {
+
+function checkGameState(gameState) {
+    if (gameState.shipPlaced.length == 0) {
         listShip.forEach(ship => gameBoard.randomShip(ship, 'user'))
         const shipPlaced = Array.from(userBlocks).filter(shipBlock => shipBlock.classList.contains('taken'))
         const shipData = shipPlaced.map(shipBlock => {
             return {
-              id: shipBlock.id,
-              listClass: Array.from(shipBlock.classList)
+                id: shipBlock.id,
+                listClass: Array.from(shipBlock.classList)
             };
-          });     
+        });
         socket.emit('ship-placed', shipData);
     } else {
         updateGameState(gameState)
     }
 }
-function updateGameState(gameState){
-    console.log(gameState)
-    gameState.shipPlaced.forEach(shipBlock  => {
-        for(let i = 0; i < shipBlock.listClass.length; i++){
+function updateGameState(gameState) {
+    gameState.shipPlaced.forEach(shipBlock => {
+        for (let i = 0; i < shipBlock.listClass.length; i++) {
             userBlocks[shipBlock.id].classList.add(shipBlock.listClass[i])
         }
     })
     gameState.shot.forEach(shot => {
-        for(let i = 0; i < shot.listClass.length; i++){
+        for (let i = 0; i < shot.listClass.length; i++) {
             enemyBlocks[shot.id].classList.add(shot.listClass[i])
         }
     })
+    userHits = gameState.shipHit
+    userSunkShips = gameState.shipSunks
+    userSunkShips.forEach(snkship => {
+        let ship = document.querySelector(`.ship-display .${snkship}-ship`)
+        ship.classList.add('red-x');
+    })
 }
-const popup = document.querySelector('.popup')
-const closePopup = document.querySelector('.close-popup');
+
 function checkScore(user, userHit, userSunkShip) {
     function checkShip(shipName, shipLength) {
         if (userHit.filter(storedShipName => storedShipName == shipName).length == shipLength) {
-            // const shipSunkSound = new Audio('./images/ShipSunk.mp3');
-            // shipSunkSound.play();
             if (user == 'user') {
                 userHits = userHit.filter(storedShipName => storedShipName != shipName)
                 infoDisplay.textContent = user + ' sunk enemy ' + shipName
+                let ship = document.querySelector(`.ship-display .${shipName}-ship`)
+                ship.classList.add('red-x');
             }
             if (user == 'enemy') {
                 enemyHits = userHit.filter(storedShipName => storedShipName != shipName)
                 infoDisplay.textContent = user + ' sunk your ' + shipName
             }
+
             userSunkShip.push(shipName)
-            popup.style.display = "block"
-            closePopup.onclick = function () {
-                popup.style.display = "none"
-            }
         }
     }
     checkShip(listShip[0].name, listShip[0].length)
@@ -242,15 +252,4 @@ function checkScore(user, userHit, userSunkShip) {
     checkShip(listShip[2].name, listShip[2].length)
     checkShip(listShip[3].name, listShip[3].length)
     checkShip(listShip[4].name, listShip[4].length)
-    if (userSunkShips.length == 5) {
-        gameOver = true
-        winner = playerNum
-    }
-    if (enemySunkShips.length == 5) {
-        gameOver = true
-        winner = playerNum % 2 + 1
-    }
-    if (gameOver && playerNum == winner) {
-        socket.emit('game-winner', winner)
-    }
 }

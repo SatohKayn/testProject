@@ -88,6 +88,7 @@ function joinGame(roomId) {
 
     socket.on('timerTick', (playerNum, time) => {
         document.querySelector(`.p${playerNum} .timer`).innerHTML = formatDuration(time)
+        // startTimer(20, 0, 20)
     })
 
     socket.on('player-connection', (connections) => {
@@ -95,10 +96,8 @@ function joinGame(roomId) {
             if (connections[i]) {
                 document.querySelector(`.p${i + 1} .player-name`).textContent = connections[i].username;
                 document.querySelector(`.p${i + 1} .img`).setAttribute('src', connections[i].image);
-                document.querySelector(`.p${i + 1} .connected`).classList.add('active')
             } else {
                 document.querySelector(`.p${i + 1} .img`).setAttribute('src', '/images/loading-gif.gif');
-                document.querySelector(`.p${i + 1} .connected`).classList.remove('active')
             }
         }
     })
@@ -184,12 +183,14 @@ function joinGame(roomId) {
                 checkScore('user', userHits, userSunkShips)
             }
         })
+        socket.on('switch-turn', (playerNum) => {
+            socket.emit('turn-start', (playerNum))
+        })
     }
 }
 function playerReadys() {
     if (gameOver || playerReady) return
     socket.emit('player-ready')
-    
     playerReady = true
     document.querySelector(`.p${playerNum} .ready`).classList.toggle('active')
 }
@@ -244,28 +245,27 @@ function updateGameState(gameState){
     })
     userHits = gameState.shipHit
     userSunkShips = gameState.shipSunks
+    userSunkShips.forEach(snkship => {
+        let ship = document.querySelector(`.ship-display .${snkship}-ship`)
+        ship.classList.add('red-x');
+    })
 }
 
-const popup = document.querySelector('.popup')
-const closePopup = document.querySelector('.close-popup');
 function checkScore(user, userHit, userSunkShip) {
     function checkShip(shipName, shipLength) {
         if (userHit.filter(storedShipName => storedShipName == shipName).length == shipLength) {
-            // const shipSunkSound = new Audio('./images/ShipSunk.mp3');
-            // shipSunkSound.play();
             if (user == 'user') {
                 userHits = userHit.filter(storedShipName => storedShipName != shipName)
                 infoDisplay.textContent = user + ' sunk enemy ' + shipName
+                let ship = document.querySelector(`.ship-display .${shipName}-ship`)
+                ship.classList.add('red-x');
             }
             if (user == 'enemy') {
                 enemyHits = userHit.filter(storedShipName => storedShipName != shipName)
                 infoDisplay.textContent = user + ' sunk your ' + shipName
             }
+            
             userSunkShip.push(shipName)
-            popup.style.display = "block"
-            closePopup.onclick = function () {
-                popup.style.display = "none"
-            }
         }
     }
     checkShip(listShip[0].name, listShip[0].length)

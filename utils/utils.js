@@ -28,8 +28,7 @@ function createRoom(roomList, rooms, rank) {
     "timers": [null, null],
     "rank": rank,
     "playerTimers": [600000, 600000],
-    "currentPlayer": null,
-    "usersIP": [null, null],
+    "currentPlayer": 1,
     "gameStart": false,
     "gameState": [{
       "shipPlaced": [],
@@ -74,7 +73,7 @@ async function getRankRoom(rooms, id, roomList) {
           const user2 = await Player.findById(connection);
           if (
             Math.abs(user2.point - user1.point) <= 199 &&
-            roomList.get(room.roomid).size < 2
+            roomList.get(room.roomid).size < 2 && !room.connections.find(obj => obj && obj._id && obj._id.toString() === id)
           ) {
             return room.roomid;
           }
